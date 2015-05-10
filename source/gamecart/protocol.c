@@ -1,10 +1,11 @@
+#include "protocol.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 #include "common.h"
-//#include "AES.h"
-#include "misc.h"
+#include "aes.h"
 #include "protocol_ctr.h"
 #include "protocol_ntr.h"
 #include "command_ctr.h"
@@ -26,9 +27,6 @@ u32 BSWAP32(u32 val) {
            (((val >> 8) & 0xFF) << 16) |
            ((val & 0xFF) << 24);
 }
-
-#define REG_CARDCONF (*(vu16*)0x1000000C)
-#define REG_CARDCONF2 (*(vu8*)0x10000010)
 
 // TODO: Verify
 void ResetCartSlot()

@@ -1,7 +1,5 @@
 #include "protocol_ntr.h"
 
-#include "misc.h"
-
 void NTR_SendCommand(const u32 command[2], u32 pageSize, u32 latency, void* buffer)
 {
     REG_NTRCARDMCNT = NTRCARD_CR1_ENABLE;
@@ -34,7 +32,7 @@ void NTR_SendCommand(const u32 command[2], u32 pageSize, u32 latency, void* buff
 
     // go
     REG_NTRCARDROMCNT = 0x10000000;
-    REG_NTRCARDROMCNT = KEY_PARAM | NTRCARD_ACTIVATE | NTRCARD_nRESET | pageParam | latency;
+    REG_NTRCARDROMCNT = NTRKEY_PARAM | NTRCARD_ACTIVATE | NTRCARD_nRESET | pageParam | latency;
 
     u8 * pbuf = (u8 *)buffer;
     u32 * pbuf32 = (u32 * )buffer;
@@ -95,7 +93,7 @@ void NTR_SendCommand(const u32 command[2], u32 pageSize, u32 latency, void* buff
         //ioAK2Delay(33);
         // pull ROM CS high
         REG_NTRCARDROMCNT = 0x10000000;
-        REG_NTRCARDROMCNT = KEY_PARAM | NTRCARD_ACTIVATE | NTRCARD_nRESET/* | 0 | 0x0000*/;
+        REG_NTRCARDROMCNT = NTRKEY_PARAM | NTRCARD_ACTIVATE | NTRCARD_nRESET/* | 0 | 0x0000*/;
     }
     // wait rom cs high
     do { cardCtrl = REG_NTRCARDROMCNT; } while( cardCtrl & NTRCARD_BUSY );

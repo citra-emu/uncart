@@ -1,7 +1,6 @@
 #include "command_ntr.h"
 
 #include "protocol_ntr.h"
-#include "misc.h"
 
 void NTR_CmdReset()
 {

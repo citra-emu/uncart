@@ -1,7 +1,6 @@
 #include "protocol_ctr.h"
 
 #include "protocol.h"
-#include "misc.h"
 #include "delay.h"
 
 void CTR_SetSecKey(u32 value) {
