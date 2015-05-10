@@ -7,6 +7,8 @@
 #include "misc.h"
 #include "protocol_ctr.h"
 #include "protocol_ntr.h"
+#include "command_ctr.h"
+#include "command_ntr.h"
 #include "delay.h"
 
 extern u8* bottomScreen;
@@ -59,31 +61,12 @@ void SwitchToNTRCARD()
 void SwitchToCTRCARD()
 {
     REG_CTRCARDCNT = 0x10000000;
-    REG_CARDCONF = (REG_CARDCONF&~3) | 2;
-}
-
-u32 Cart_GetSecureID()
-{
-    u32 id = 0;
-    const u32 getid_cmd[4] = { 0xA2000000, 0x00000000, rand1, rand2 };
-    CTR_SendCommand(getid_cmd, 0x4, 1, 0x100802C, &id);
-    return id;
+    REG_CARDCONF = (REG_CARDCONF & ~3) | 2;
 }
 
 int Cart_IsInserted()
 {
-    return (0x9000E2C2 == Cart_GetSecureID() );
-}
-
-void Cart_ReadSectorSD(u8* aBuffer, u32 aSector)
-{
-    u64 adr = ((u64)0xBF << 56) | (aSector * 0x200);
-    const u32 readheader_cmd[4] = {
-        (u32)(adr >> 32),
-        (u32)(adr & 0xFFFFFFFF),
-        0x00000000, 0x00000000
-    };
-    CTR_SendCommand( readheader_cmd, 0x200, 1, 0x100802C, aBuffer );
+    return (0x9000E2C2 == CTR_CmdGetSecureId(rand1, rand2) );
 }
 
 u32 Cart_GetID()
@@ -102,7 +85,7 @@ void Cart_Init()
     ioDelay(0xF000);
 
     REG_NTRCARDROMCNT = 0;
-    REG_NTRCARDMCNT = REG_NTRCARDMCNT&0xFF;
+    REG_NTRCARDMCNT &= 0xFF;
     ioDelay(167550);
 
     REG_NTRCARDMCNT |= (NTRCARD_CR1_ENABLE | NTRCARD_CR1_IRQ);
@@ -110,41 +93,20 @@ void Cart_Init()
     while (REG_NTRCARDROMCNT & NTRCARD_BUSY);
 
     // Reset
-    u32 reset_cmd[2] = { 0x9F000000, 0x00000000 };
-    NTR_SendCommand(reset_cmd, 0x2000, NTRCARD_CLK_SLOW | NTRCARD_DELAY1(0x1FFF) | NTRCARD_DELAY2(0x18), NULL);
-
-    u32 getid_cmd[2] = { 0x90000000, 0x00000000 };
-    NTR_SendCommand(getid_cmd, 0x4, NTRCARD_CLK_SLOW | NTRCARD_DELAY1(0x1FFF) | NTRCARD_DELAY2(0x18), &CartID);
+    NTR_CmdReset();
+    CartID = NTR_CmdGetCartId();
 
     // 3ds
     if (CartID & 0x10000000) {
         u32 unknowna0_cmd[2] = { 0xA0000000, 0x00000000 };
         NTR_SendCommand(unknowna0_cmd, 0x4, 0, &A0_Response);
 
-        u32 enter16bytemode_cmd[2] = { 0x3E000000, 0x00000000 };
-        NTR_SendCommand(enter16bytemode_cmd, 0x0, 0, NULL);
-
+        NTR_CmdEnter16ByteMode();
         SwitchToCTRCARD();
         ioDelay(0xF000);
 
         REG_CTRCARDBLKCNT = 0;
     }
-}
-
-void SendReadCommand( u32 sector, u32 length, u32 blocks, void * buffer )
-{
-    const u32 read_cmd[4] = {
-        (0xBF000000 | (u32)(sector >> 23)),
-        (u32)((sector << 9) & 0xFFFFFFFF),
-        0x00000000, 0x00000000
-    };
-    CTR_SendCommand(read_cmd, length, blocks, 0x100822C, buffer);
-}
-
-void GetHeader(void * buffer)
-{
-    static const u32 readheader_cmd[4] = { 0x82000000, 0x00000000, 0x00000000, 0x00000000 };
-    CTR_SendCommand(readheader_cmd, 0x200, 1, 0x4802C, buffer);
 }
 
 //returns 1 if MAC valid otherwise 0
@@ -186,7 +148,7 @@ void AES_SetKeyControl(u32 a) {
     *((volatile u8*)0x10009011) = a | 0x80;
 }
 
-void Cart_Secure_Init(u32 *buf,u32 *out)
+void Cart_Secure_Init(u32 *buf, u32 *out)
 {
     AES_SetKeyControl(0x3B);
 
@@ -203,31 +165,22 @@ void Cart_Secure_Init(u32 *buf,u32 *out)
     rand1 = 0x42434445;//*((vu32*)0x10011000);
     rand2 = 0x46474849;//*((vu32*)0x10011010);
 
-    const u32 seed_cmd[4] = { 0x83000000, 0x00000000, rand1, rand2 };
-    CTR_SendCommand(seed_cmd, 0, 1, 0x100822C, NULL);
+    CTR_CmdSeed(rand1, rand2);
 
     out[3] = BSWAP32(rand2);
     out[2] = BSWAP32(rand1);
     CTR_SetSecSeed(out, false);
 
-    //ClearScreen(bottomScreen, RGB(255, 0, 255));
-
     u32 test = 0;
     const u32 A2_cmd[4] = { 0xA2000000, 0x00000000, rand1, rand2 };
     CTR_SendCommand(A2_cmd, 4, 1, 0x100822C, &test);
-
-    //ClearScreen(bottomScreen, RGB(0, 255, 0));
 
     u32 test2 = 0;
     const u32 A3_cmd[4] = { 0xA3000000, 0x00000000, rand1, rand2 };
     CTR_SendCommand(A3_cmd, 4, 1, 0x100822C, &test2);
 
-    //ClearScreen(bottomScreen, RGB(255, 0, 0));
-
     const u32 C5_cmd[4] = { 0xC5000000, 0x00000000, rand1, rand2 };
     CTR_SendCommand(C5_cmd, 0, 1, 0x100822C, NULL);
-
-    //ClearScreen(bottomScreen, RGB(0, 0, 255));
 
     CTR_SendCommand(A2_cmd, 4, 1, 0x100822C, &test);
     CTR_SendCommand(A2_cmd, 4, 1, 0x100822C, &test);

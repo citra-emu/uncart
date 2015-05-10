@@ -7,6 +7,7 @@
 #include "hid.h"
 #include "fatfs/ff.h"
 #include "gamecart/protocol.h"
+#include "gamecart/command_ctr.h"
 
 extern s32 CartID;
 extern s32 CartID2;
@@ -76,7 +77,7 @@ int main() {
     while((*((vu16*)0x10146000) & 1)); // Wait for button A
     Debug("Done waiting :)...", 1, 1, 0xFF);
 
-    GetHeader(header);
+    CTR_CmdReadHeader(header);
     Debug("Done reading header: %08x :)...", *(u32*)&header[0x100]);
 
     // TODO: Check first header bytes for "NCSD" or other magic words which should be there for valid NCCHs
@@ -90,7 +91,7 @@ int main() {
     u32 blocks = dumpSize / mediaUnit; //1MB of blocks
 
     // Read out the header 0x0000-0x1000
-    SendReadCommand( 0, mediaUnit, 8, (void*)(target) );
+    CTR_CmdReadData(0, mediaUnit, 8, (void*)(target));
 
     // Create output file - TODO: Put actual information in the file name (game id/name/..?), to have a standardized naming scheme
     memcpy(String2, "/dump.3ds\0", 10);
@@ -135,7 +136,7 @@ int main() {
             if ((adr2 % (blocks*3)) == blocks*2)
                 Debug("Dumping %08X / %08X - %03d%%",currentSector,cartSize,percent);
 
-            SendReadCommand(currentSector, mediaUnit, blocks, (void*)(target + (adr2 * mediaUnit)));
+            CTR_CmdReadData(currentSector, mediaUnit, blocks, (void*)(target + (adr2 * mediaUnit)));
         }
         f_write(&file, target, dumped * mediaUnit, &bytes_written);
         f_sync(&file);
