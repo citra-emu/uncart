@@ -20,7 +20,7 @@ export TARGET		:=	$(shell basename $(CURDIR))
 BUILD		:=	build
 SOURCES		:=	source source/fatfs
 DATA		:=	data
-INCLUDES	:=	include source
+INCLUDES	:=	source
 
 #---------------------------------------------------------------------------------
 # Setup some defines

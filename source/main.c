@@ -67,8 +67,6 @@ int main() {
     Debug("Successfully f_mounted");
     Debug("cleared stuff! Initializing game card...", 1, 1, 0xFF);
 
-
-
     // ROM DUMPING CODE STARTS HERE
 
     Cart_Init();
@@ -82,18 +80,6 @@ int main() {
     Debug("Done reading header: %08x :)...", *(u32*)&header[0x100]);
 
     // TODO: Check first header bytes for "NCSD" or other magic words which should be there for valid NCCHs
-    /*  if(*ptr != 0x4453434E) // Check for "NCSD" magic
-      {
-        Debug("Bad header read! Got %08x, expected %08x", *ptr, 0x4453434E);
-        svcSleepThread(150000000LL);
-        wait_key();
-        return 0;
-      }
-      Debug("Done checking NCSD magic:)...", 1, 1, 0xFF);
-    */
-
-
-
     u32 sec_keys[4];
     Cart_Secure_Init((u32*)header,sec_keys);
 
@@ -111,13 +97,14 @@ int main() {
 
     wait_key();
     Debug("File name: \"%s\"", String2);
+
     unsigned flags = FA_READ | FA_WRITE | FA_CREATE_ALWAYS;
-    ret = (f_open(&file, String2, flags) == FR_OK);
-    if (!ret) {
+    if (f_open(&file, String2, flags) != FR_OK) {
         Debug("Failed to create file...");
         wait_key();
         return 0;
     }
+
     f_lseek(&file, 0);
     f_sync(&file);
     Debug("Successfully created file");
@@ -131,26 +118,24 @@ int main() {
     wait_key();
 
 
-    u32 cartSize = (*((u32*)&target[0x104]));
+    u32 cartSize = *(u32*)(&target[0x104]);
     Debug("Cart size: %d MB", cartSize * 0x200 / 1024/1024);
     wait_key();
 
     // Dump remaining data
-    for(u32 adr=0x20; adr<cartSize; adr+=ramCache)
-    {
+    for(u32 adr=0x20; adr<cartSize; adr+=ramCache) {
         ClearTop();
         Debug("Wrote 0x%x bytes, e.g. %08x",bytes_written, *(u32*)target);
         u32 dumped = cartSize - adr;
         if(dumped > ramCache) dumped = ramCache;
 
-        for(u32 adr2=0; (adr2 < dumped); adr2+=blocks)
-        {
+        for(u32 adr2=0; (adr2 < dumped); adr2+=blocks) {
             u32 currentSector = (adr+adr2);
             u32 percent = ((currentSector*100)/cartSize);
             if ((adr2 % (blocks*3)) == blocks*2)
                 Debug("Dumping %08X / %08X - %03d%%",currentSector,cartSize,percent);
 
-            SendReadCommand( currentSector, mediaUnit, blocks, (void*)(target+(adr2*mediaUnit)) );
+            SendReadCommand(currentSector, mediaUnit, blocks, (void*)(target + (adr2 * mediaUnit)));
         }
         f_write(&file, target, dumped * mediaUnit, &bytes_written);
         f_sync(&file);
