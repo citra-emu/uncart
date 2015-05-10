@@ -22,13 +22,6 @@
 #define vu32 volatile u32
 #define vu64 volatile u64
 
-inline int maxi(int a, int b) {
-    return a > b ? a : b;
-}
-inline int mini(int a, int b) {
-    return a < b ? a : b;
-}
-
 inline char* strupper(const char* str) {
     char* buffer = (char*)malloc(strlen(str) + 1);
     for (int i = 0; i < strlen(str); ++i)

@@ -36,7 +36,7 @@ CFLAGS	:=	-g -Wall -O2\
 			-ffast-math -std=c99\
 			$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -DARM9
+CFLAGS	+=	$(INCLUDE) -DARM9 -Werror-implicit-function-declaration
 
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions
 

@@ -6,7 +6,7 @@
 #include "framebuffer.h"
 #include "hid.h"
 #include "fatfs/ff.h"
-#include "gamecart/gamecart.h"
+#include "gamecart/protocol.h"
 
 extern s32 CartID;
 extern s32 CartID2;
