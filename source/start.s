@@ -18,5 +18,5 @@ _init:
 	bl main
 	ldmfd sp!, {r0-r12, lr}
 
-	@ return control to FIRM	
+	@ return control to FIRM
 	ldr pc, arm9ep_backup

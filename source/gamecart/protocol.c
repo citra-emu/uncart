@@ -1,4 +1,3 @@
-#include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -26,24 +25,21 @@ u32 BSWAP32(u32 val) {
            ((val & 0xFF) << 24);
 }
 
-//Reset the cart slot?
 #define REG_CARDCONF (*(vu16*)0x1000000C)
 #define REG_CARDCONF2 (*(vu8*)0x10000010)
-void GatewayCartInit()
+
+// TODO: Verify
+void ResetCartSlot()
 {
     REG_CARDCONF2 = 0x0C;
-
     REG_CARDCONF &= ~3;
 
-    if(REG_CARDCONF2 == 0xC)
-    {
-        while(REG_CARDCONF2 != 0);
+    if (REG_CARDCONF2 == 0xC) {
+        while (REG_CARDCONF2 != 0);
     }
 
-    if(REG_CARDCONF2 != 0)
-    {
+    if (REG_CARDCONF2 != 0)
         return;
-    }
 
     REG_CARDCONF2 = 0x4;
     while(REG_CARDCONF2 != 0x4);
@@ -69,7 +65,7 @@ void SwitchToCTRCARD()
 u32 Cart_GetSecureID()
 {
     u32 id = 0;
-    u32 getid_cmd[4] = { 0xA2000000, 0x00000000, rand1, rand2 };
+    const u32 getid_cmd[4] = { 0xA2000000, 0x00000000, rand1, rand2 };
     CTR_SendCommand(getid_cmd, 0x4, 1, 0x100802C, &id);
     return id;
 }
@@ -79,12 +75,12 @@ int Cart_IsInserted()
     return (0x9000E2C2 == Cart_GetSecureID() );
 }
 
-void Cart_ReadSectorSD(u8* aBuffer,u32 aSector)
+void Cart_ReadSectorSD(u8* aBuffer, u32 aSector)
 {
     u64 adr = ((u64)0xBF << 56) | (aSector * 0x200);
-    u32 readheader_cmd[4] = {
+    const u32 readheader_cmd[4] = {
         (u32)(adr >> 32),
-        (u32)(adr&0xFFFFFFFF),
+        (u32)(adr & 0xFFFFFFFF),
         0x00000000, 0x00000000
     };
     CTR_SendCommand( readheader_cmd, 0x200, 1, 0x100802C, aBuffer );
@@ -97,19 +93,18 @@ u32 Cart_GetID()
 
 void Cart_Init()
 {
-    GatewayCartInit(); //Seems to reset the cart slot?
+    ResetCartSlot(); //Seems to reset the cart slot?
 
     REG_CTRCARDSECCNT &= 0xFFFFFFFB;
-
     ioDelay(0xF000);
 
     SwitchToNTRCARD();
-
     ioDelay(0xF000);
 
     REG_NTRCARDROMCNT = 0;
     REG_NTRCARDMCNT = REG_NTRCARDMCNT&0xFF;
     ioDelay(167550);
+
     REG_NTRCARDMCNT |= (NTRCARD_CR1_ENABLE | NTRCARD_CR1_IRQ);
     REG_NTRCARDROMCNT = NTRCARD_nRESET | NTRCARD_SEC_SEED;
     while (REG_NTRCARDROMCNT & NTRCARD_BUSY);
@@ -121,8 +116,8 @@ void Cart_Init()
     u32 getid_cmd[2] = { 0x90000000, 0x00000000 };
     NTR_SendCommand(getid_cmd, 0x4, NTRCARD_CLK_SLOW | NTRCARD_DELAY1(0x1FFF) | NTRCARD_DELAY2(0x18), &CartID);
 
-    if ((CartID & 0x10000000)) // 3ds
-    {
+    // 3ds
+    if (CartID & 0x10000000) {
         u32 unknowna0_cmd[2] = { 0xA0000000, 0x00000000 };
         NTR_SendCommand(unknowna0_cmd, 0x4, 0, &A0_Response);
 
@@ -130,7 +125,6 @@ void Cart_Init()
         NTR_SendCommand(enter16bytemode_cmd, 0x0, 0, NULL);
 
         SwitchToCTRCARD();
-
         ioDelay(0xF000);
 
         REG_CTRCARDBLKCNT = 0;
@@ -139,9 +133,9 @@ void Cart_Init()
 
 void SendReadCommand( u32 sector, u32 length, u32 blocks, void * buffer )
 {
-    u32 read_cmd[4] = {
-        (0xBF000000 | (u32)(sector>>23)),
-        (u32)((sector<<9) & 0xFFFFFFFF),
+    const u32 read_cmd[4] = {
+        (0xBF000000 | (u32)(sector >> 23)),
+        (u32)((sector << 9) & 0xFFFFFFFF),
         0x00000000, 0x00000000
     };
     CTR_SendCommand(read_cmd, length, blocks, 0x100822C, buffer);
@@ -149,7 +143,7 @@ void SendReadCommand( u32 sector, u32 length, u32 blocks, void * buffer )
 
 void GetHeader(void * buffer)
 {
-    u32 readheader_cmd[4] = { 0x82000000, 0x00000000, 0x00000000, 0x00000000 };
+    static const u32 readheader_cmd[4] = { 0x82000000, 0x00000000, 0x00000000, 0x00000000 };
     CTR_SendCommand(readheader_cmd, 0x200, 1, 0x4802C, buffer);
 }
 
@@ -198,20 +192,19 @@ void Cart_Secure_Init(u32 *buf,u32 *out)
 
     u8 mac_valid = card_aes(out, buf, 0x200);
 
-//    if(!mac_valid)
+//    if (!mac_valid)
 //        ClearScreen(bottomScreen, RGB(255, 0, 0));
 
     ioDelay(0xF0000);
 
     CTR_SetSecKey(A0_Response);
-
     CTR_SetSecSeed(out, true);
 
     rand1 = 0x42434445;//*((vu32*)0x10011000);
     rand2 = 0x46474849;//*((vu32*)0x10011010);
 
-    u32 seed_cmd[4] = { 0x83000000, 0x00000000, rand1, rand2 };
-    CTR_SendCommand( seed_cmd, 0, 1, 0x100822C, NULL );
+    const u32 seed_cmd[4] = { 0x83000000, 0x00000000, rand1, rand2 };
+    CTR_SendCommand(seed_cmd, 0, 1, 0x100822C, NULL);
 
     out[3] = BSWAP32(rand2);
     out[2] = BSWAP32(rand1);
@@ -220,25 +213,25 @@ void Cart_Secure_Init(u32 *buf,u32 *out)
     //ClearScreen(bottomScreen, RGB(255, 0, 255));
 
     u32 test = 0;
-    u32 A2_cmd[4] = { 0xA2000000, 0x00000000, rand1, rand2 };
-    CTR_SendCommand( A2_cmd, 4, 1, 0x100822C, &test );
+    const u32 A2_cmd[4] = { 0xA2000000, 0x00000000, rand1, rand2 };
+    CTR_SendCommand(A2_cmd, 4, 1, 0x100822C, &test);
 
     //ClearScreen(bottomScreen, RGB(0, 255, 0));
 
     u32 test2 = 0;
-    u32 A3_cmd[4] = { 0xA3000000, 0x00000000, rand1, rand2 };
-    CTR_SendCommand( A3_cmd, 4, 1, 0x100822C, &test2 );
+    const u32 A3_cmd[4] = { 0xA3000000, 0x00000000, rand1, rand2 };
+    CTR_SendCommand(A3_cmd, 4, 1, 0x100822C, &test2);
 
     //ClearScreen(bottomScreen, RGB(255, 0, 0));
 
-    u32 C5_cmd[4] = { 0xC5000000, 0x00000000, rand1, rand2 };
-    CTR_SendCommand( C5_cmd, 0, 1, 0x100822C, NULL );
+    const u32 C5_cmd[4] = { 0xC5000000, 0x00000000, rand1, rand2 };
+    CTR_SendCommand(C5_cmd, 0, 1, 0x100822C, NULL);
 
     //ClearScreen(bottomScreen, RGB(0, 0, 255));
 
-    CTR_SendCommand( A2_cmd, 4, 1, 0x100822C, &test );
-    CTR_SendCommand( A2_cmd, 4, 1, 0x100822C, &test );
-    CTR_SendCommand( A2_cmd, 4, 1, 0x100822C, &test );
-    CTR_SendCommand( A2_cmd, 4, 1, 0x100822C, &test );
-    CTR_SendCommand( A2_cmd, 4, 1, 0x100822C, &test );
+    CTR_SendCommand(A2_cmd, 4, 1, 0x100822C, &test);
+    CTR_SendCommand(A2_cmd, 4, 1, 0x100822C, &test);
+    CTR_SendCommand(A2_cmd, 4, 1, 0x100822C, &test);
+    CTR_SendCommand(A2_cmd, 4, 1, 0x100822C, &test);
+    CTR_SendCommand(A2_cmd, 4, 1, 0x100822C, &test);
 }

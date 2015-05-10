@@ -23,10 +23,4 @@ void DrawString(unsigned char *screen, const char *str, int x, int y, int color,
 void DrawStringF(int x, int y, const char *format, ...);
 void DrawHexWithName(unsigned char *screen, const char *str, unsigned int hex, int x, int y, int color, int bgcolor);
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 void Debug(const char *format, ...);
-#ifdef __cplusplus
-}
-#endif

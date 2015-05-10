@@ -9,7 +9,7 @@ void CTR_SetSecKey(u32 value) {
     while (!(REG_CTRCARDSECCNT & 0x4000));
 }
 
-void CTR_SetSecSeed(u32 *seed, bool flag) {
+void CTR_SetSecSeed(const u32* seed, bool flag) {
     REG_CTRCARDSECSEED = BSWAP32(seed[3]);
     REG_CTRCARDSECSEED = BSWAP32(seed[2]);
     REG_CTRCARDSECSEED = BSWAP32(seed[1]);
@@ -23,7 +23,7 @@ void CTR_SetSecSeed(u32 *seed, bool flag) {
     }
 }
 
-void CTR_SendCommand(u32 command[4], u32 pageSize, u32 blocks, u32 latency, void * buffer)
+void CTR_SendCommand(const u32 command[4], u32 pageSize, u32 blocks, u32 latency, void* buffer)
 {
     REG_CTRCARDCMD[0] = command[3];
     REG_CTRCARDCMD[1] = command[2];
