@@ -8,7 +8,7 @@
 //#include "DrawCharacter.h"
 #include "misc.h"
 
-extern "C" void ioDelay( u32 us );
+void ioDelay( u32 us );
 extern u8* bottomScreen;
 
 int CartInited=0;
@@ -163,7 +163,7 @@ void NTR_SendCommand( u32 command[2], u32 pageSize, u32 latency, void * buffer )
     //lastCmd[0] = command[0];lastCmd[1] = command[1];
 }
 
-extern "C" void CTR_SendCommand( u32 command[4], u32 pageSize, u32 blocks, u32 latency, void * buffer )
+void CTR_SendCommand( u32 command[4], u32 pageSize, u32 blocks, u32 latency, void * buffer )
 {
     REG_CTRCARDCMD[0] = command[3];
     REG_CTRCARDCMD[1] = command[2];
@@ -301,12 +301,12 @@ void Cart_ReadSectorSD(u8* aBuffer,u32 aSector)
     CTR_SendCommand( readheader_cmd, 0x200, 1, 0x100802C, aBuffer );
 }
 
-extern "C" u32 Cart_GetID()
+u32 Cart_GetID()
 {
     return CartID;
 }
 
-extern "C" void Cart_Init()
+void Cart_Init()
 {
     //Skip init if its already been done
     //if(CartInited) return;
@@ -374,13 +374,13 @@ extern "C" void Cart_Init()
     CartInited = 1;
 }
 
-extern "C" void SendReadCommand( u32 sector, u32 length, u32 blocks, void * buffer )
+void SendReadCommand( u32 sector, u32 length, u32 blocks, void * buffer )
 {
     u32 read_cmd[4] = { (0xBF000000 | (u32)(sector>>23)), (u32)((sector<<9) & 0xFFFFFFFF), 0x00000000, 0x00000000 };
     CTR_SendCommand( read_cmd, length, blocks, 0x100822C, buffer );
 }
 
-extern "C" void GetHeader( void * buffer )
+void GetHeader( void * buffer )
 {
     u32 readheader_cmd[4] = { 0x82000000, 0x00000000, 0x00000000, 0x00000000 };
     CTR_SendCommand( readheader_cmd, 0x200, 1, 0x4802C, buffer );
@@ -438,9 +438,11 @@ void ctr_set_sec_seed(u32 *seed, bool flag) {
     }
 }
 
-extern "C" void AES_SetKeyControl(u32 a);
+void AES_SetKeyControl(u32 a) {
+    *((volatile u8*)0x10009011) = a | 0x80;
+}
 
-extern "C" void Cart_Secure_Init(u32 *buf,u32 *out)
+void Cart_Secure_Init(u32 *buf,u32 *out)
 {
     AES_SetKeyControl(0x3B);
     

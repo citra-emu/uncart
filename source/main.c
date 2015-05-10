@@ -6,6 +6,7 @@
 #include "framebuffer.h"
 #include "hid.h"
 #include "fatfs/ff.h"
+#include "gamecart.h"
 
 extern s32 CartID;
 extern s32 CartID2;
@@ -26,22 +27,13 @@ void wait_key() {
     InputWait();
 }
 
-void AES_SetKeyControl(u32 a) {
-    *((volatile u8*)0x10009011) = a | 0x80;
-}
-
-void print_status(u8 *Str, u32 x, u32 y, u8 color)
-{
-    Debug(Str);
-}
-
 int main() {
 
     // Setup boring stuff - clear the screen, initialize SD output, etc...
     ClearTop();
     Debug("");
     Debug("Hello world from ARM9!");
-    print_status("ROM dump tool v0.2", 1, 1, 0xFF);
+    Debug("ROM dump tool v0.2", 1, 1, 0xFF);
     wait_key();
 
     u8 file_path[38];
@@ -59,7 +51,7 @@ int main() {
     volatile u8* header = (vu8*)0x23000000;
     u32 *ptr = (u32*)(target + 0x0100);
 
-    print_status("ROM dump tool v0.2", 1, 1, 0xFF);
+    Debug("ROM dump tool v0.2", 1, 1, 0xFF);
     memset((u8*)target, 0x00, 0x100000); // Clear our 1 MB buffer
     // clear_screens(0x00);
 
@@ -73,7 +65,7 @@ int main() {
         return 0;
     }
     Debug("Successfully f_mounted");
-    print_status("cleared stuff! Initializing game card...", 1, 1, 0xFF);
+    Debug("cleared stuff! Initializing game card...", 1, 1, 0xFF);
 
 
 
@@ -84,7 +76,7 @@ int main() {
     Debug("Done! Cart id is %08x, press A...", (u32)Cart_GetID());
 
     while((*((vu16*)0x10146000) & 1)); // Wait for button A
-    print_status("Done waiting :)...", 1, 1, 0xFF);
+    Debug("Done waiting :)...", 1, 1, 0xFF);
 
     GetHeader(header);
     Debug("Done reading header: %08x :)...", *(u32*)&header[0x100]);
@@ -97,19 +89,19 @@ int main() {
         wait_key();
         return 0;
       }
-      print_status("Done checking NCSD magic:)...", 1, 1, 0xFF);
+      Debug("Done checking NCSD magic:)...", 1, 1, 0xFF);
     */
 
 
 
-    uint32_t sec_keys[4];
+    u32 sec_keys[4];
     Cart_Secure_Init((u32*)header,sec_keys);
 
-    uint32_t mediaUnit = 0x200;
-    uint32_t ramCache = 0xC000; //24MB/s - 0x1000000
+    u32 mediaUnit = 0x200;
+    u32 ramCache = 0xC000; //24MB/s - 0x1000000
 
-    uint32_t dumpSize = 0x100000; //1MB
-    uint32_t blocks = dumpSize / mediaUnit; //1MB of blocks
+    u32 dumpSize = 0x100000; //1MB
+    u32 blocks = dumpSize / mediaUnit; //1MB of blocks
 
     // Read out the header 0x0000-0x1000
     SendReadCommand( 0, mediaUnit, 8, (void*)(target) );
@@ -132,29 +124,29 @@ int main() {
     wait_key();
 
     // Write header to file
-    uint32_t written = 0;
+    u32 written = 0;
     f_write(&file, target, 0x4000, &written);
     f_sync(&file);
     Debug("Wrote header");
     wait_key();
 
 
-    uint32_t cartSize = (*((uint32_t*)&target[0x104]));
+    u32 cartSize = (*((u32*)&target[0x104]));
     Debug("Cart size: %d MB", cartSize * 0x200 / 1024/1024);
     wait_key();
 
     // Dump remaining data
-    for(uint32_t adr=0x20; adr<cartSize; adr+=ramCache)
+    for(u32 adr=0x20; adr<cartSize; adr+=ramCache)
     {
         ClearTop();
         Debug("Wrote 0x%x bytes, e.g. %08x",bytes_written, *(u32*)target);
-        uint32_t dumped = cartSize - adr;
+        u32 dumped = cartSize - adr;
         if(dumped > ramCache) dumped = ramCache;
 
-        for(uint32_t adr2=0; (adr2 < dumped); adr2+=blocks)
+        for(u32 adr2=0; (adr2 < dumped); adr2+=blocks)
         {
-            uint32_t currentSector = (adr+adr2);
-            uint32_t percent = ((currentSector*100)/cartSize);
+            u32 currentSector = (adr+adr2);
+            u32 percent = ((currentSector*100)/cartSize);
             if ((adr2 % (blocks*3)) == blocks*2)
                 Debug("Dumping %08X / %08X - %03d%%",currentSector,cartSize,percent);
 
