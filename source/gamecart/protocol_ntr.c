@@ -1,3 +1,7 @@
+// Copyright 2014 Normmatt
+// Licensed under GPLv2 or any later version
+// Refer to the license.txt file included.
+
 #include "protocol_ntr.h"
 
 void NTR_SendCommand(const u32 command[2], u32 pageSize, u32 latency, void* buffer)

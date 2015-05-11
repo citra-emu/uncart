@@ -1,3 +1,7 @@
+// Copyright 2014 Normmatt
+// Licensed under GPLv2 or any later version
+// Refer to the license.txt file included.
+
 #include "command_ctr.h"
 
 #include "protocol_ctr.h"
