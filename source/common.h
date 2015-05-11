@@ -26,7 +26,7 @@ inline char* strupper(const char* str) {
     const size_t string_len = strlen(str);
     char* buffer = (char*)malloc(string_len + 1);
 
-    for (int i = 0; i < string_len; ++i)
+    for (size_t i = 0; i < string_len; ++i)
         buffer[i] = toupper((unsigned)str[i]);
 
     return buffer;
@@ -36,7 +36,7 @@ inline char* strlower(const char* str) {
     const size_t string_len = strlen(str);
     char* buffer = (char*)malloc(string_len + 1);
 
-    for (int i = 0; i < string_len; ++i)
+    for (size_t i = 0; i < string_len; ++i)
         buffer[i] = tolower((unsigned)str[i]);
 
     return buffer;

@@ -45,8 +45,9 @@ void DrawCharacter(unsigned char *screen, int character, int x, int y, int color
 
 void DrawString(unsigned char *screen, const char *str, int x, int y, int color, int bgcolor)
 {
-    int i;
-    for (i = 0; i < strlen(str); i++)
+    const size_t string_len = strlen(str);
+
+    for (size_t i = 0; i < string_len; i++)
         DrawCharacter(screen, str[i], x + i * 8, y, color, bgcolor);
 }
 
