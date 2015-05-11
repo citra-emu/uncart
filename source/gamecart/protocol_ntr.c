@@ -13,21 +13,28 @@ void NTR_SendCommand(const u32 command[2], u32 pageSize, u32 latency, void* buff
     }
 
     pageSize -= pageSize & 3; // align to 4 byte
+
     u32 pageParam = NTRCARD_PAGESIZE_4K;
     u32 transferLength = 4096;
+
     // make zero read and 4 byte read a little special for timing optimization(and 512 too)
-    if( 0 == pageSize ) {
-        transferLength = 0;
-        pageParam = NTRCARD_PAGESIZE_0;
-    } else if( 4 == pageSize ) {
-        transferLength = 4;
-        pageParam = NTRCARD_PAGESIZE_4;
-    } else if( 512 == pageSize ) {
-        transferLength = 512;
-        pageParam = NTRCARD_PAGESIZE_512;
-    } else if( 8192 == pageSize ) {
-        transferLength = 8192;
-        pageParam = NTRCARD_PAGESIZE_8K;
+    switch (pageSize) {
+        case 0:
+            transferLength = 0;
+            pageParam = NTRCARD_PAGESIZE_0;
+            break;
+        case 4:
+            transferLength = 4;
+            pageParam = NTRCARD_PAGESIZE_4;
+            break;
+        case 512:
+            transferLength = 512;
+            pageParam = NTRCARD_PAGESIZE_512;
+            break;
+        case 8192:
+            transferLength = 8192;
+            pageParam = NTRCARD_PAGESIZE_8K;
+            break;
     }
 
     // go
