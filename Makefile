@@ -29,10 +29,10 @@ INCLUDES	:=	source
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-ARCH	:=	-mthumb -mthumb-interwork
+ARCH	:=	-march=armv5te -mtune=arm946e-s -mthumb -mthumb-interwork
 
 CFLAGS	:=	-g -Wall -O2\
-			-march=armv5te -mtune=arm946e-s -fomit-frame-pointer\
+			-fomit-frame-pointer\
 			-ffast-math -std=c99\
 			$(ARCH)
 
