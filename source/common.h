@@ -23,15 +23,21 @@ typedef volatile u32 vu32;
 typedef volatile u64 vu64;
 
 inline char* strupper(const char* str) {
-    char* buffer = (char*)malloc(strlen(str) + 1);
-    for (int i = 0; i < strlen(str); ++i)
+    const size_t string_len = strlen(str);
+    char* buffer = (char*)malloc(string_len + 1);
+
+    for (int i = 0; i < string_len; ++i)
         buffer[i] = toupper((unsigned)str[i]);
+
     return buffer;
 }
 
 inline char* strlower(const char* str) {
-    char* buffer = (char*)malloc(strlen(str) + 1);
-    for (int i = 0; i < strlen(str); ++i)
+    const size_t string_len = strlen(str);
+    char* buffer = (char*)malloc(string_len + 1);
+
+    for (int i = 0; i < string_len; ++i)
         buffer[i] = tolower((unsigned)str[i]);
+
     return buffer;
 }
