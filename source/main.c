@@ -37,29 +37,21 @@ int main() {
     Debug("ROM dump tool v0.2", 1, 1, 0xFF);
     wait_key();
 
-    u8 file_path[38];
-    u32 sdmc_file_handle[8];
     u32 bytes_written = 0;
-    u32 i = 0;
-    u32 size = 0;
-    u8 String[8];
-    u8 String2[21];
-    static u8 ClearCharacter[2] = {0xDB, 0x00};
+    u8 String[21];
 
     // Arbitrary target buffer
     // TODO: This should be done in a nicer way ;)
     volatile u8* target = (vu8*)0x22000000;
     volatile u8* header = (vu8*)0x23000000;
-    u32 *ptr = (u32*)(target + 0x0100);
 
     Debug("ROM dump tool v0.2", 1, 1, 0xFF);
     memset((u8*)target, 0x00, 0x100000); // Clear our 1 MB buffer
     // clear_screens(0x00);
 
-    unsigned ret;
     *(u32*)0x10000020 = 0; // InitFS stuff
     *(u32*)0x10000020 = 0x340; // InitFS stuff
-    ret = f_mount(&fs, "0:", 0) == FR_OK;
+    unsigned ret = f_mount(&fs, "0:", 0) == FR_OK;
     if (!ret) {
         Debug("Failed to f_mount...");
         wait_key();
@@ -94,13 +86,13 @@ int main() {
     CTR_CmdReadData(0, mediaUnit, 8, (void*)(target));
 
     // Create output file - TODO: Put actual information in the file name (game id/name/..?), to have a standardized naming scheme
-    memcpy(String2, "/dump.3ds\0", 10);
+    memcpy(String, "/dump.3ds\0", 10);
 
     wait_key();
-    Debug("File name: \"%s\"", String2);
+    Debug("File name: \"%s\"", String);
 
     unsigned flags = FA_READ | FA_WRITE | FA_CREATE_ALWAYS;
-    if (f_open(&file, String2, flags) != FR_OK) {
+    if (f_open(&file, String, flags) != FR_OK) {
         Debug("Failed to create file...");
         wait_key();
         return 0;
