@@ -3,7 +3,6 @@
 #include <stdio.h>
 
 #include "draw.h"
-#include "framebuffer.h"
 #include "hid.h"
 #include "fatfs/ff.h"
 #include "gamecart/protocol.h"
