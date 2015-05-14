@@ -52,6 +52,8 @@ _populate_mpu:
     mcr p15, 0, r5, c6, c5, 0
     ldr r5, [r4, #0x18]
     mcr p15, 0, r5, c6, c6, 0
+    ldr r5, [r4, #0x1C]
+    mcr p15, 0, r5, c6, c7, 0
 
     @ Give read/write access to all the memory regions
     ldr r5, =0x03333333
@@ -59,7 +61,7 @@ _populate_mpu:
     ldr r5, =0x03300330
     mcr p15, 0, r5, c5, c0, 3 @ instruction access
 
-    mov r5, #0x72
+    mov r5, #0x66
     mcr p15, 0, r5, c2, c0, 0  @ data cachable
     mcr p15, 0, r5, c2, c0, 1  @ instruction cachable
 
