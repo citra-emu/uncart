@@ -136,7 +136,7 @@ int main() {
 
     // Write header - TODO: Not sure why this is done at the very end..
     f_lseek(&file, 0x1000);
-    f_write(&file, &header, 0x200, &written);
+    f_write(&file, header, 0x200, &written);
     f_sync(&file);
     Debug("Wrote 0x%x header bytes", written);
     wait_key();
