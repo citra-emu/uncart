@@ -70,15 +70,22 @@ void DrawStringF(int x, int y, const char *format, ...)
 
 void Debug(const char *format, ...)
 {
-    char str[256];
+    char str[50];
+    const char* spaces = "                                                X";
     va_list va;
 
     va_start(va, format);
-    vsnprintf(str, 256, format, va);
+    vsnprintf(str, sizeof(str), format, va);
     va_end(va);
+    snprintf(str, sizeof(str), "%s%s", str, spaces);
 
     DrawString(TOP_SCREEN0, str, 10, current_y, RGB(255, 0, 0), RGB(255, 255, 255));
+    DrawString(TOP_SCREEN0, spaces, 10, current_y + 10, RGB(255, 0, 0), RGB(255, 255, 255));
     DrawString(TOP_SCREEN1, str, 10, current_y, RGB(255, 0, 0), RGB(255, 255, 255));
+    DrawString(TOP_SCREEN1, spaces, 10, current_y + 10, RGB(255, 0, 0), RGB(255, 255, 255));
 
     current_y += 10;
+    if (current_y >= 240) {
+        current_y = 0;
+    }
 }
