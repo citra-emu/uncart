@@ -15,13 +15,13 @@ extern s32 CartID2;
 static FATFS fs;
 static FIL file;
 
-void ClearTop() {
+static void ClearTop(void) {
     ClearScreen(TOP_SCREEN0, RGB(255, 255, 255));
     ClearScreen(TOP_SCREEN1, RGB(255, 255, 255));
     current_y = 0;
 }
 
-void wait_key() {
+static void wait_key(void) {
     Debug("");
     Debug("Press key to continue");
     InputWait();

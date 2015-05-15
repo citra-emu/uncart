@@ -6,6 +6,6 @@
 
 #include "common.h"
 
-void NTR_CmdReset();
-int NTR_CmdGetCartId();
-void NTR_CmdEnter16ByteMode();
+void NTR_CmdReset(void);
+int NTR_CmdGetCartId(void);
+void NTR_CmdEnter16ByteMode(void);

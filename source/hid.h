@@ -17,4 +17,4 @@
 #define BUTTON_X      (1 << 10)
 #define BUTTON_Y      (1 << 11)
 
-u32 InputWait();
+u32 InputWait(void);

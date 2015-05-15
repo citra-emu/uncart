@@ -3,7 +3,7 @@
 
 #define CONFIG_PLATFORM_REG ((volatile u32*)0x10140FFC)
 
-Platform GetUnitPlatform()
+Platform GetUnitPlatform(void)
 {
     switch (*CONFIG_PLATFORM_REG) {
         case 7:

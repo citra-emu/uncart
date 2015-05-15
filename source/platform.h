@@ -5,4 +5,4 @@ typedef enum {
     PLATFORM_N3DS,
 } Platform;
 
-Platform GetUnitPlatform();
+Platform GetUnitPlatform(void);

@@ -33,7 +33,7 @@ u32 BSWAP32(u32 val) {
 }
 
 // TODO: Verify
-void ResetCartSlot()
+static void ResetCartSlot(void)
 {
     REG_CARDCONF2 = 0x0C;
     REG_CARDCONF &= ~3;
@@ -52,7 +52,7 @@ void ResetCartSlot()
     while(REG_CARDCONF2 != 0x8);
 }
 
-void SwitchToNTRCARD()
+static void SwitchToNTRCARD(void)
 {
     REG_NTRCARDROMCNT = 0x20000000;
     REG_CARDCONF &= ~3;
@@ -60,23 +60,23 @@ void SwitchToNTRCARD()
     REG_NTRCARDMCNT = NTRCARD_CR1_ENABLE;
 }
 
-void SwitchToCTRCARD()
+static void SwitchToCTRCARD(void)
 {
     REG_CTRCARDCNT = 0x10000000;
     REG_CARDCONF = (REG_CARDCONF & ~3) | 2;
 }
 
-int Cart_IsInserted()
+int Cart_IsInserted(void)
 {
     return (0x9000E2C2 == CTR_CmdGetSecureId(rand1, rand2) );
 }
 
-u32 Cart_GetID()
+u32 Cart_GetID(void)
 {
     return CartID;
 }
 
-void Cart_Init()
+void Cart_Init(void)
 {
     ResetCartSlot(); //Seems to reset the cart slot?
 
@@ -112,7 +112,7 @@ void Cart_Init()
 }
 
 //returns 1 if MAC valid otherwise 0
-u8 card_aes(u32 *out, u32 *buff, size_t size) { // note size param ignored
+static u8 card_aes(u32 *out, u32 *buff, size_t size) { // note size param ignored
     u8 tmp = REG_AESKEYCNT;
     REG_AESCNT |= 0x2800000;
     REG_AESCTR[0] = buff[14];
@@ -146,7 +146,7 @@ u8 card_aes(u32 *out, u32 *buff, size_t size) { // note size param ignored
     return ((REG_AESCNT >> 21) & 1);
 }
 
-void AES_SetKeyControl(u32 a) {
+static void AES_SetKeyControl(u32 a) {
     *((volatile u8*)0x10009011) = a | 0x80;
 }
 
