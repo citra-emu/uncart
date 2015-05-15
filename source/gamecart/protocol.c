@@ -20,10 +20,10 @@ extern u8* bottomScreen;
 
 int CartID = -1;
 u32 CartType = 0;
-int A0_Response = -1;
 
-u32 rand1 = 0;
-u32 rand2 = 0;
+static int A0_Response = -1;
+static u32 rand1 = 0;
+static u32 rand2 = 0;
 
 u32 BSWAP32(u32 val) {
     return (((val >> 24) & 0xFF)) |
