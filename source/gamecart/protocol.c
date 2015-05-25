@@ -81,14 +81,14 @@ void Cart_Init(void)
     ResetCartSlot(); //Seems to reset the cart slot?
 
     REG_CTRCARDSECCNT &= 0xFFFFFFFB;
-    ioDelay(0xF000);
+    ioDelay(0x30000);
 
     SwitchToNTRCARD();
-    ioDelay(0xF000);
+    ioDelay(0x30000);
 
     REG_NTRCARDROMCNT = 0;
     REG_NTRCARDMCNT &= 0xFF;
-    ioDelay(167550);
+    ioDelay(0x40000);
 
     REG_NTRCARDMCNT |= (NTRCARD_CR1_ENABLE | NTRCARD_CR1_IRQ);
     REG_NTRCARDROMCNT = NTRCARD_nRESET | NTRCARD_SEC_SEED;
