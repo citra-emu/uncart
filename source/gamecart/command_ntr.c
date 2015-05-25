@@ -14,7 +14,7 @@ void NTR_CmdReset(void)
 
 int NTR_CmdGetCartId(void)
 {
-    int id;
+    u32 id;
     static const u32 getid_cmd[2] = { 0x90000000, 0x00000000 };
     NTR_SendCommand(getid_cmd, 0x4, NTRCARD_CLK_SLOW | NTRCARD_DELAY1(0x1FFF) | NTRCARD_DELAY2(0x18), &id);
     return id;

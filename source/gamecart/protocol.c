@@ -18,7 +18,7 @@
 
 extern u8* bottomScreen;
 
-int CartID = -1;
+u32 CartID = -1;
 u32 CartType = 0;
 
 static int A0_Response = -1;
