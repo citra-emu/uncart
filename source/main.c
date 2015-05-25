@@ -36,8 +36,8 @@ int main() {
     Debug("ROM dump tool v0.2", 1, 1, 0xFF);
     wait_key();
 
-    u32 bytes_written = 0;
     char filename_buf[21];
+    unsigned int bytes_written = 0;
 
     // Arbitrary target buffer
     // TODO: This should be done in a nicer way ;)
@@ -116,7 +116,7 @@ int main() {
     // Dump remaining data
     for(u32 adr=0x20; adr<cartSize; adr+=ramCache) {
         ClearTop();
-        Debug("Wrote 0x%x bytes, e.g. %08x",bytes_written, *(u32*)target);
+        Debug("Wrote 0x%x bytes, e.g. %08x", bytes_written, *(u32*)target);
         u32 dumped = cartSize - adr;
         if(dumped > ramCache) dumped = ramCache;
 
