@@ -66,6 +66,7 @@ restart_program:
     u32 blocks = 1 * 1024 * 1024 / mediaUnit; //1MB of blocks
 
     // Read out the header 0x0000-0x1000
+    Cart_Dummy();
     CTR_CmdReadData(0, mediaUnit, 0x1000 / mediaUnit, target);
 
     u32 NCSD_magic = *(u32*)(&target[0x100]);
@@ -105,6 +106,8 @@ restart_program:
 
         u8* read_ptr = target;
         while (read_ptr < target + target_buf_size && current_sector < cartSize) {
+            Cart_Dummy();
+            Cart_Dummy();
             CTR_CmdReadData(current_sector, mediaUnit, blocks, read_ptr);
             read_ptr += mediaUnit * blocks;
             current_sector += blocks;
