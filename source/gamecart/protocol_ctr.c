@@ -6,6 +6,7 @@
 
 #include "protocol.h"
 #include "delay.h"
+#include "draw.h"
 
 void CTR_SetSecKey(u32 value) {
     REG_CTRCARDSECCNT |= ((value & 3) << 8) | 4;
@@ -28,6 +29,10 @@ void CTR_SetSecSeed(const u32* seed, bool flag) {
 
 void CTR_SendCommand(const u32 command[4], u32 pageSize, u32 blocks, u32 latency, void* buffer)
 {
+#ifdef VERBOSE_COMMANDS
+    Debug("C> %08X %08X %08X %08X", command[0], command[1], command[2], command[3]);
+#endif
+
     REG_CTRCARDCMD[0] = command[3];
     REG_CTRCARDCMD[1] = command[2];
     REG_CTRCARDCMD[2] = command[1];
@@ -142,4 +147,33 @@ void CTR_SendCommand(const u32 command[4], u32 pageSize, u32 blocks, u32 latency
     // wait rom cs high
     do { cardCtrl = REG_CTRCARDCNT; } while( cardCtrl & CTRCARD_BUSY );
     //lastCmd[0] = command[0];lastCmd[1] = command[1];
+
+#ifdef VERBOSE_COMMANDS
+    if (!useBuf) {
+        Debug("C< NULL");
+    } else if (!useBuf32) {
+        Debug("C< non32");
+    } else {
+        u32* p = (u32*)buffer;
+        int transferWords = count / 4;
+        for (int i = 0; i < transferWords && i < 4*4; i += 4) {
+            switch (transferWords - i) {
+            case 0:
+                break;
+            case 1:
+                Debug("C< %08X", p[i+0]);
+                break;
+            case 2:
+                Debug("C< %08X %08X", p[i+0], p[i+1]);
+                break;
+            case 3:
+                Debug("C< %08X %08X %08X", p[i+0], p[i+1], p[i+2]);
+                break;
+            default:
+                Debug("C< %08X %08X %08X %08X", p[i+0], p[i+1], p[i+2], p[i+3]);
+                break;
+            }
+        }
+    }
+#endif
 }

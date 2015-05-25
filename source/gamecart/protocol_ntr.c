@@ -3,9 +3,14 @@
 // Refer to the license.txt file included.
 
 #include "protocol_ntr.h"
+#include "draw.h"
 
 void NTR_SendCommand(const u32 command[2], u32 pageSize, u32 latency, void* buffer)
 {
+#ifdef VERBOSE_COMMANDS
+    Debug("N> %08X %08X", command[0], command[1]);
+#endif
+
     REG_NTRCARDMCNT = NTRCARD_CR1_ENABLE;
 
     for( u32 i=0; i<2; ++i )
@@ -109,4 +114,33 @@ void NTR_SendCommand(const u32 command[2], u32 pageSize, u32 latency, void* buff
     // wait rom cs high
     do { cardCtrl = REG_NTRCARDROMCNT; } while( cardCtrl & NTRCARD_BUSY );
     //lastCmd[0] = command[0];lastCmd[1] = command[1];
+
+#ifdef VERBOSE_COMMANDS
+    if (!useBuf) {
+        Debug("N< NULL");
+    } else if (!useBuf32) {
+        Debug("N< non32");
+    } else {
+        u32* p = (u32*)buffer;
+        int transferWords = count / 4;
+        for (int i = 0; i < transferWords && i < 4*4; i += 4) {
+            switch (transferWords - i) {
+            case 0:
+                break;
+            case 1:
+                Debug("N< %08X", p[i+0]);
+                break;
+            case 2:
+                Debug("N< %08X %08X", p[i+0], p[i+1]);
+                break;
+            case 3:
+                Debug("N< %08X %08X %08X", p[i+0], p[i+1], p[i+2]);
+                break;
+            default:
+                Debug("N< %08X %08X %08X %08X", p[i+0], p[i+1], p[i+2], p[i+3]);
+                break;
+            }
+        }
+    }
+#endif
 }
