@@ -38,10 +38,9 @@ restart_program:
     // Arbitrary target buffer
     // TODO: This should be done in a nicer way ;)
     u8* target = (u8*)0x22000000;
+    u32 target_buf_size = 16 * 1024 * 1024; // 16MB
     u8* header = (u8*)0x23000000;
-
-    memset(target, 0x00, 0x100000); // Clear our 1 MB buffer
-    // clear_screens(0x00);
+    memset(target, 0, target_buf_size); // Clear our buffer
 
     *(vu32*)0x10000020 = 0; // InitFS stuff
     *(vu32*)0x10000020 = 0x340; // InitFS stuff
@@ -59,18 +58,15 @@ restart_program:
     CTR_CmdReadHeader(header);
     Debug("Done reading header: %08X :)...", *(u32*)&header[0x100]);
 
-    // TODO: Check first header bytes for "NCSD" or other magic words which should be there for valid NCCHs
+    // TODO: Check first header bytes for "NCCH" or other magic words
     u32 sec_keys[4];
     Cart_Secure_Init((u32*)header,sec_keys);
 
-    u32 mediaUnit = 0x200; // TODO: Read from cart
-    u32 ramCache = 0xC000; //24MB/s - 0x1000000
-
-    u32 dumpSize = 0x100000; //1MB
-    u32 blocks = dumpSize / mediaUnit; //1MB of blocks
+    const u32 mediaUnit = 0x200; // TODO: Read from cart
+    u32 blocks = 1 * 1024 * 1024 / mediaUnit; //1MB of blocks
 
     // Read out the header 0x0000-0x1000
-    CTR_CmdReadData(0, mediaUnit, 8, target);
+    CTR_CmdReadData(0, mediaUnit, 0x1000 / mediaUnit, target);
 
     u32 NCSD_magic = *(u32*)(&target[0x100]);
     u32 cartSize = *(u32*)(&target[0x104]);
@@ -87,52 +83,57 @@ restart_program:
     snprintf(filename_buf, sizeof(filename_buf), "/%.16s.3ds", &header[0x150]);
     Debug("Outputting to file: \"%s\"", filename_buf);
 
-    unsigned flags = FA_READ | FA_WRITE | FA_CREATE_ALWAYS;
-    if (f_open(&file, filename_buf, flags) != FR_OK) {
+    if (f_open(&file, filename_buf, FA_READ | FA_WRITE | FA_CREATE_ALWAYS) != FR_OK) {
         Debug("Failed to create file...");
         wait_key();
         goto cleanup_mount;
     }
 
-    f_lseek(&file, 0);
-    f_sync(&file);
 
     // Write header to file
-    unsigned int written = 0;
-    f_write(&file, target, 0x4000, &written);
-    f_sync(&file);
+    f_lseek(&file, 0);
 
-    Debug("Ready to dump. (SELECT to skip)");
+    Debug("Ready to dump. (SELECT to cancel)");
     if (InputWait() & 4) // Select
-        goto skip_dumping;
+        goto cleanup_file;
 
     // Dump remaining data
-    for (u32 adr = 0x20; adr < cartSize; adr += ramCache) {
-        u32 dumped = cartSize - adr;
-        if (dumped > ramCache) dumped = ramCache;
+    u32 current_sector = 0;
+    while (current_sector < cartSize) {
+        unsigned int percentage = current_sector * 100 / cartSize;
+        Debug("Dumping %08X / %08X - %3u%%", current_sector, cartSize, percentage);
 
-        for (u32 adr2 = 0; adr2 < dumped; adr2 += blocks) {
-            u32 currentSector = adr + adr2;
-            u32 percent = (currentSector * 100) / cartSize;
-            if ((adr2 % (blocks*3)) == blocks*2)
-                Debug("Dumping %08X / %08X - %03d%%",currentSector,cartSize,percent);
-
-            CTR_CmdReadData(currentSector, mediaUnit, blocks, (void*)(target + (adr2 * mediaUnit)));
+        u8* read_ptr = target;
+        while (read_ptr < target + target_buf_size && current_sector < cartSize) {
+            CTR_CmdReadData(current_sector, mediaUnit, blocks, read_ptr);
+            read_ptr += mediaUnit * blocks;
+            current_sector += blocks;
         }
 
-        unsigned int bytes_written = 0;
-        f_write(&file, target, dumped * mediaUnit, &bytes_written);
-        Debug("Wrote 0x%x bytes, e.g. %08x", bytes_written, *(u32*)target);
+        u8* write_ptr = target;
+        while (write_ptr < read_ptr) {
+            unsigned int bytes_written = 0;
+            f_write(&file, write_ptr, read_ptr - write_ptr, &bytes_written);
+            Debug("Wrote 0x%x bytes, e.g. %08x", bytes_written, *(u32*)write_ptr);
+
+            if (bytes_written == 0) {
+                Debug("Writing failed! :( SD full?");
+                goto cleanup_file;
+            }
+
+            write_ptr += bytes_written;
+        }
     }
     Debug("Done!");
 
-skip_dumping:
     // Write header - TODO: Not sure why this is done at the very end..
     f_lseek(&file, 0x1000);
+    unsigned int written = 0;
     f_write(&file, header, 0x200, &written);
-    f_sync(&file);
 
+cleanup_file:
     // Done, clean up...
+    f_sync(&file);
     f_close(&file);
 cleanup_mount:
     f_mount(NULL, "0:", 0);
