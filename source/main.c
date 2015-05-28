@@ -26,30 +26,68 @@ static void wait_key(void) {
     InputWait();
 }
 
+struct Context {
+    u8* buffer;
+    size_t buffer_size;
+
+    u32 cart_size;
+    u32 media_unit;
+};
+
+int dump_cart_region(u32 start_sector, u32 end_sector, FIL* output_file, struct Context* ctx) {
+    const u32 read_size = 1 * 1024 * 1024 / ctx->media_unit; // 1MB
+
+    // Dump remaining data
+    u32 current_sector = start_sector;
+    while (current_sector < end_sector) {
+        unsigned int percentage = current_sector * 100 / ctx->cart_size;
+        Debug("Dumping %08X / %08X - %3u%%", current_sector, ctx->cart_size, percentage);
+
+        u8* read_ptr = ctx->buffer;
+        while (read_ptr < ctx->buffer + ctx->buffer_size && current_sector < end_sector) {
+            Cart_Dummy();
+            Cart_Dummy();
+            CTR_CmdReadData(current_sector, ctx->media_unit, read_size, read_ptr);
+            read_ptr += ctx->media_unit * read_size;
+            current_sector += read_size;
+        }
+
+        u8* write_ptr = ctx->buffer;
+        while (write_ptr < read_ptr) {
+            unsigned int bytes_written = 0;
+            f_write(output_file, write_ptr, read_ptr - write_ptr, &bytes_written);
+            Debug("Wrote 0x%x bytes, e.g. %08x", bytes_written, *(u32*)write_ptr);
+
+            if (bytes_written == 0) {
+                Debug("Writing failed! :( SD full?");
+                return -1;
+            }
+
+            write_ptr += bytes_written;
+        }
+    }
+
+    return 0;
+}
+
 int main() {
 
 restart_program:
     // Setup boring stuff - clear the screen, initialize SD output, etc...
     ClearTop();
     Debug("ROM dump tool v0.2");
-    Debug("Insert your game cart and SD card now.");
+    Debug("Insert your game cart now.");
     wait_key();
 
     // Arbitrary target buffer
     // TODO: This should be done in a nicer way ;)
     u8* target = (u8*)0x22000000;
-    u32 target_buf_size = 16 * 1024 * 1024; // 16MB
+    u32 target_buf_size = 16u * 1024u * 1024u; // 16MB
     u8* header = (u8*)0x23000000;
     memset(target, 0, target_buf_size); // Clear our buffer
 
     *(vu32*)0x10000020 = 0; // InitFS stuff
     *(vu32*)0x10000020 = 0x340; // InitFS stuff
-    unsigned ret = f_mount(&fs, "0:", 0) == FR_OK;
-    if (!ret) {
-        Debug("Failed to f_mount...");
-        wait_key();
-        return 0;
-    }
 
     // ROM DUMPING CODE STARTS HERE
 
@@ -63,7 +101,6 @@ restart_program:
     Cart_Secure_Init((u32*)header,sec_keys);
 
     const u32 mediaUnit = 0x200; // TODO: Read from cart
-    u32 blocks = 1 * 1024 * 1024 / mediaUnit; //1MB of blocks
 
     // Read out the header 0x0000-0x1000
     Cart_Dummy();
@@ -76,71 +113,74 @@ restart_program:
         Debug("NCSD magic not found in header!!!");
         Debug("Press A to continue anyway.");
         if (!(InputWait() & 1))
+            goto restart_prompt;
+    }
+
+    struct Context context = {
+        .buffer = target,
+        .buffer_size = target_buf_size,
+        .cart_size = cartSize,
+        .media_unit = mediaUnit,
+    };
+
+    // Maximum number of blocks in a single file
+    u32 file_max_blocks = 2u * 1024u * 1024u * 1024u / mediaUnit; // 2GB
+    u32 current_part = 0;
+
+    while (current_part * file_max_blocks < cartSize) {
+        // Create output file
+        char filename_buf[32];
+        char extension_digit = cartSize <= file_max_blocks ? 's' : '0' + current_part;
+        snprintf(filename_buf, sizeof(filename_buf), "/%.16s.3d%c", &header[0x150], extension_digit);
+        Debug("Writing to file: \"%s\"", filename_buf);
+        Debug("Change the SD card now and/or press a key.");
+        Debug("(Or SELECT to cancel)");
+        if (InputWait() & 4) // Select
+            break;
+
+        if (f_mount(&fs, "0:", 0) != FR_OK) {
+            Debug("Failed to f_mount... Retrying");
+            wait_key();
+            goto cleanup_none;
+        }
+
+        if (f_open(&file, filename_buf, FA_READ | FA_WRITE | FA_CREATE_ALWAYS) != FR_OK) {
+            Debug("Failed to create file... Retrying");
+            wait_key();
             goto cleanup_mount;
-    }
-
-    // Create output file
-    char filename_buf[32];
-    snprintf(filename_buf, sizeof(filename_buf), "/%.16s.3ds", &header[0x150]);
-    Debug("Outputting to file: \"%s\"", filename_buf);
-
-    if (f_open(&file, filename_buf, FA_READ | FA_WRITE | FA_CREATE_ALWAYS) != FR_OK) {
-        Debug("Failed to create file...");
-        wait_key();
-        goto cleanup_mount;
-    }
-
-
-    // Write header to file
-    f_lseek(&file, 0);
-
-    Debug("Ready to dump. (SELECT to cancel)");
-    if (InputWait() & 4) // Select
-        goto cleanup_file;
-
-    // Dump remaining data
-    u32 current_sector = 0;
-    while (current_sector < cartSize) {
-        unsigned int percentage = current_sector * 100 / cartSize;
-        Debug("Dumping %08X / %08X - %3u%%", current_sector, cartSize, percentage);
-
-        u8* read_ptr = target;
-        while (read_ptr < target + target_buf_size && current_sector < cartSize) {
-            Cart_Dummy();
-            Cart_Dummy();
-            CTR_CmdReadData(current_sector, mediaUnit, blocks, read_ptr);
-            read_ptr += mediaUnit * blocks;
-            current_sector += blocks;
         }
 
-        u8* write_ptr = target;
-        while (write_ptr < read_ptr) {
-            unsigned int bytes_written = 0;
-            f_write(&file, write_ptr, read_ptr - write_ptr, &bytes_written);
-            Debug("Wrote 0x%x bytes, e.g. %08x", bytes_written, *(u32*)write_ptr);
+        f_lseek(&file, 0);
 
-            if (bytes_written == 0) {
-                Debug("Writing failed! :( SD full?");
-                goto cleanup_file;
-            }
+        u32 region_start = current_part * file_max_blocks;
+        u32 region_end = region_start + file_max_blocks;
+        if (region_end > cartSize)
+            region_end = cartSize;
 
-            write_ptr += bytes_written;
+        if (dump_cart_region(region_start, region_end, &file, &context) < 0)
+            goto cleanup_file;
+
+        if (current_part == 0) {
+            // Write header - TODO: Not sure why this is done at the very end..
+            f_lseek(&file, 0x1000);
+            unsigned int written = 0;
+            f_write(&file, header, 0x200, &written);
         }
-    }
-    Debug("Done!");
 
-    // Write header - TODO: Not sure why this is done at the very end..
-    f_lseek(&file, 0x1000);
-    unsigned int written = 0;
-    f_write(&file, header, 0x200, &written);
+        Debug("Done!");
+        current_part += 1;
 
 cleanup_file:
-    // Done, clean up...
-    f_sync(&file);
-    f_close(&file);
+        // Done, clean up...
+        f_sync(&file);
+        f_close(&file);
 cleanup_mount:
-    f_mount(NULL, "0:", 0);
+        f_mount(NULL, "0:", 0);
+cleanup_none:
+        ;
+    }
 
+restart_prompt:
     Debug("Press B to exit, any other key to restart.");
     if (!(InputWait() & 2))
         goto restart_program;
