@@ -92,7 +92,7 @@ restart_program:
     // ROM DUMPING CODE STARTS HERE
 
     Cart_Init();
-    Debug("Cart id is %08x, press A...", Cart_GetID());
+    Debug("Cart id is %08x", Cart_GetID());
     CTR_CmdReadHeader(header);
     Debug("Done reading header: %08X :)...", *(u32*)&header[0x100]);
 
