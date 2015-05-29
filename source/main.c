@@ -164,7 +164,9 @@ restart_program:
             // Write header - TODO: Not sure why this is done at the very end..
             f_lseek(&file, 0x1000);
             unsigned int written = 0;
-            f_write(&file, header, 0x200, &written);
+            // Fill the 0x1200-0x4000 unused area with 0xFF instead of random garbage.
+            memset(header + 0x200, 0xFF, 0x3000 - 0x200);
+            f_write(&file, header, 0x3000, &written);
         }
 
         Debug("Done!");
