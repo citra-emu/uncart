@@ -112,7 +112,7 @@ restart_program:
     if (NCSD_magic != 0x4453434E) {
         Debug("NCSD magic not found in header!!!");
         Debug("Press A to continue anyway.");
-        if (!(InputWait() & 1))
+        if (!(InputWait() & BUTTON_A))
             goto restart_prompt;
     }
 
@@ -135,7 +135,7 @@ restart_program:
         Debug("Writing to file: \"%s\"", filename_buf);
         Debug("Change the SD card now and/or press a key.");
         Debug("(Or SELECT to cancel)");
-        if (InputWait() & 4) // Select
+        if (InputWait() & BUTTON_SELECT)
             break;
 
         if (f_mount(&fs, "0:", 0) != FR_OK) {
@@ -184,7 +184,7 @@ cleanup_none:
 
 restart_prompt:
     Debug("Press B to exit, any other key to restart.");
-    if (!(InputWait() & 2))
+    if (!(InputWait() & BUTTON_B))
         goto restart_program;
 
     return 0;
