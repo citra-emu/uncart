@@ -52,3 +52,32 @@
 #define AES_MODE_CBC_ENCRYPT    5
 #define AES_MODE_UNK6           6
 #define AES_MODE_UNK7           7
+#define AES_CCM_DECRYPT_MODE    (AES_MODE_CCM_DECRYPT << 27)
+#define AES_CCM_ENCRYPT_MODE    (AES_MODE_CCM_ENCRYPT << 27)
+#define AES_CTR_MODE            (AES_MODE_CTR << 27)
+#define AES_CBC_DECRYPT_MODE    (AES_MODE_CBC_DECRYPT << 27)
+#define AES_CBC_ENCRYPT_MODE    (AES_MODE_CBC_ENCRYPT << 27)
+#define AES_ECB_DECRYPT_MODE    (AES_MODE_UNK6 << 27)
+#define AES_ECB_ENCRYPT_MODE    (AES_MODE_UNK7 << 27)
+
+#define AES_BIG_INPUT      1
+#define AES_LITTLE_INPUT   0
+#define AES_NORMAL_INPUT   4
+#define AES_REVERSED_INPUT 0
+#define AES_BLOCK_SIZE 0x10
+
+void add_ctr(void* ctr, u32 carry);
+
+void setup_aeskeyX(u8 keyslot, void* keyx);
+void decrypt(void* key, void* iv, void* inbuf, void* outbuf, size_t size);
+void setup_aeskey(u32 keyno, int value, void* key);
+void use_aeskey(u32 keyno);
+void set_ctr(int mode, void* iv);
+void aes_decrypt(void* inbuf, void* outbuf, void* iv, size_t size, u32 mode);
+void aes_fifos(void* inbuf, void* outbuf, size_t blocks);
+void set_aeswrfifo(u32 value);
+u32 read_aesrdfifo(void);
+u32 aes_getwritecount();
+u32 aes_getreadcount();
+u32 aescnt_checkwrite();
+u32 aescnt_checkread();
