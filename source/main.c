@@ -17,6 +17,12 @@ extern s32 CartID2;
 static FATFS fs;
 static FIL file;
 
+enum NCCH_Type {
+    NCCHTYPE_EXHEADER,
+    NCCHTYPE_EXEFS,
+    NCCHTYPE_ROMFS
+};
+
 static void ClearTop(void) {
     ClearScreen(TOP_SCREEN0, RGB(255, 255, 255));
     ClearScreen(TOP_SCREEN1, RGB(255, 255, 255));
@@ -28,7 +34,7 @@ static void wait_key(void) {
     InputWait();
 }
 
-static void ncch_get_counter(NCCH_Header* header, u8 counter[16], u8 type) {
+static void ncch_get_counter(NCCH_Header* header, u8 counter[16], enum NCCH_Type type) {
     u32 version = header->version;
     u32 mediaunitsize = 0x200; // TODO
     u8* partitionid = header->partition_id;
@@ -36,25 +42,31 @@ static void ncch_get_counter(NCCH_Header* header, u8 counter[16], u8 type) {
 
     memset(counter, 0, 16);
 
-    if (version == 2 || version == 0)
-    {
+    switch (version) {
+    case 0:
+    case 2:
         for(u32 i=0; i<8; i++)
             counter[i] = partitionid[7-i];
         counter[8] = type;
-    }
-    else if (version == 1)
-    {
-        if (type == 1/*NCCHTYPE_EXHEADER*/)
+        break;
+    case 1:
+        switch (type) {
+        case NCCHTYPE_EXHEADER:
             x = 0x200;
-        else if (type == 2/*NCCHTYPE_EXEFS*/)
+            break;
+        case NCCHTYPE_EXEFS:
             x = header->exefs_offset * mediaunitsize;
-        else if (type == 3/*NCCHTYPE_ROMFS*/)
+            break;
+        case NCCHTYPE_ROMFS:
             x = header->romfs_offset * mediaunitsize;
+            break;
+        }
 
         for(u32 i=0; i<8; i++)
             counter[i] = partitionid[i];
         for(u32 i=0; i<4; i++)
             counter[12+i] = x>>((3-i)*8);
+        break;
     }
 }
 
@@ -125,7 +137,7 @@ static void find_encrypted_ncch_regions(NCCH_Header* ncch, NCSD_Header* ncsd, un
             ctx->areas[ctx->num_areas].size = 0x800 / ctx->media_unit; // NOTE: ncchs->extended_header_size doesn't cover the full exheader!
             ctx->areas[ctx->num_areas].uses_7x_crypto = 0;
             memcpy(ctx->areas[ctx->num_areas].keyY, ncch->signature, sizeof(ctx->areas[ctx->num_areas].keyY));
-            ncch_get_counter(ncch, ctx->areas[ctx->num_areas].ctr, 1);
+            ncch_get_counter(ncch, ctx->areas[ctx->num_areas].ctr, NCCHTYPE_EXHEADER);
             ctx->num_areas++;
         }
 
@@ -134,7 +146,7 @@ static void find_encrypted_ncch_regions(NCCH_Header* ncch, NCSD_Header* ncsd, un
             ctx->areas[ctx->num_areas].size = ncch->exefs_size;
             memcpy(ctx->areas[ctx->num_areas].keyY, ncch->signature, sizeof(ctx->areas[ctx->num_areas].keyY));
             ctx->areas[ctx->num_areas].uses_7x_crypto = 0;
-            ncch_get_counter(ncch, ctx->areas[ctx->num_areas].ctr, 2);
+            ncch_get_counter(ncch, ctx->areas[ctx->num_areas].ctr, NCCHTYPE_EXEFS);
             ctx->num_areas++;
         }
         if (ncch->romfs_offset && ncch->romfs_size) {
@@ -142,7 +154,7 @@ static void find_encrypted_ncch_regions(NCCH_Header* ncch, NCSD_Header* ncsd, un
             ctx->areas[ctx->num_areas].uses_7x_crypto = 0;
             ctx->areas[ctx->num_areas].size = ncch->romfs_size;
             memcpy(ctx->areas[ctx->num_areas].keyY, ncch->signature, sizeof(ctx->areas[ctx->num_areas].keyY));
-            ncch_get_counter(ncch, ctx->areas[ctx->num_areas].ctr, 3);
+            ncch_get_counter(ncch, ctx->areas[ctx->num_areas].ctr, NCCHTYPE_ROMFS);
             ctx->num_areas++;
         }
     }
