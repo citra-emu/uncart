@@ -323,8 +323,6 @@ restart_program:
         } else if (input & BUTTON_SELECT) {
             context.decrypt = 0;
             break;
-        } else {
-            Debug("Invalid input. Press START or SELECT");
         }
     }
 
