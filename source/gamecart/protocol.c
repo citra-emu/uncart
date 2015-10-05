@@ -9,7 +9,7 @@
 #include <stdio.h>
 
 #include "common.h"
-#include "aes.h"
+#include "crypto.h"
 #include "protocol_ctr.h"
 #include "protocol_ntr.h"
 #include "command_ctr.h"
@@ -113,37 +113,37 @@ void Cart_Init(void)
 
 //returns 1 if MAC valid otherwise 0
 static u8 card_aes(u32 *out, u32 *buff, size_t size) { // note size param ignored
-    u8 tmp = REG_AESKEYCNT;
-    REG_AESCNT |= 0x2800000;
+    u8 tmp = *REG_AESKEYCNT;
+    *REG_AESCNT |= 0x2800000;
     REG_AESCTR[0] = buff[14];
     REG_AESCTR[1] = buff[13];
     REG_AESCTR[2] = buff[12];
-    REG_AESCNT |= 0x2800000;
-    REG_AESKEYCNT = (REG_AESKEYCNT & 0xC0) | 0x3B;
-    REG_AESKEYYFIFO = buff[0];
-    REG_AESKEYYFIFO = buff[1];
-    REG_AESKEYYFIFO = buff[2];
-    REG_AESKEYYFIFO = buff[3];
-    REG_AESKEYCNT = tmp;
-    REG_AESKEYSEL = 0x3B;
-    REG_AESCNT |= 0x4000000;
-    REG_AESCNT |= 0x2970000;
+    *REG_AESCNT |= 0x2800000;
+    *REG_AESKEYCNT = (*REG_AESKEYCNT & 0xC0) | 0x3B;
+    *REG_AESKEYYFIFO = buff[0];
+    *REG_AESKEYYFIFO = buff[1];
+    *REG_AESKEYYFIFO = buff[2];
+    *REG_AESKEYYFIFO = buff[3];
+    *REG_AESKEYCNT = tmp;
+    *REG_AESKEYSEL = 0x3B;
+    *REG_AESCNT |= 0x4000000;
+    *REG_AESCNT |= 0x2970000;
     REG_AESMAC[0] = buff[11];
     REG_AESMAC[1] = buff[10];
     REG_AESMAC[2] = buff[9];
     REG_AESMAC[3] = buff[8];
-    REG_AESBLKCNT = 0x10000;
-    REG_AESCNT = 0x83D70C00;
-    REG_AESWRFIFO = buff[4];
-    REG_AESWRFIFO = buff[5];
-    REG_AESWRFIFO = buff[6];
-    REG_AESWRFIFO = buff[7];
-    while (((REG_AESCNT >> 5) & 0x1F) <= 3);
-    out[0] = REG_AESRDFIFO;
-    out[1] = REG_AESRDFIFO;
-    out[2] = REG_AESRDFIFO;
-    out[3] = REG_AESRDFIFO;
-    return ((REG_AESCNT >> 21) & 1);
+    *REG_AESBLKCNT = 0x10000;
+    *REG_AESCNT = 0x83D70C00;
+    *REG_AESWRFIFO = buff[4];
+    *REG_AESWRFIFO = buff[5];
+    *REG_AESWRFIFO = buff[6];
+    *REG_AESWRFIFO = buff[7];
+    while (((*REG_AESCNT >> 5) & 0x1F) <= 3);
+    out[0] = *REG_AESRDFIFO;
+    out[1] = *REG_AESRDFIFO;
+    out[2] = *REG_AESRDFIFO;
+    out[3] = *REG_AESRDFIFO;
+    return ((*REG_AESCNT >> 21) & 1);
 }
 
 static void AES_SetKeyControl(u32 a) {
