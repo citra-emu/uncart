@@ -334,16 +334,12 @@ restart_program:
         // Create output file
         // File extension is "cci"/"3ds" for single-file dumps and "cciN"/"3dN" for split dumps
         char filename_buf[32];
-        char* extension = (context.decrypt != 0) ? "cci" : "3d";
-        int filename_len = snprintf(filename_buf, sizeof(filename_buf), "/%.16s.%s", &header[0x150], extension);
         if (cartSize <= file_max_blocks) {
-            if (context.decrypt == 0) {
-                filename_buf[filename_len++] = 's';
-                filename_buf[filename_len++] = '\0';
-            }
+            const char *extension = (context.decrypt == 0) ? "3ds" : "cci";
+            snprintf(filename_buf, sizeof(filename_buf), "/%.16s.%s", &header[0x150], extension);
         } else {
-            filename_buf[filename_len++] = '0' + current_part;
-            filename_buf[filename_len++] = '\0';
+            const char *extension = (context.decrypt == 0) ? "3d" : "cci";
+            snprintf(filename_buf, sizeof(filename_buf), "/%.16s.%s%u", &header[0x150], extension, current_part);
         }
 
 
