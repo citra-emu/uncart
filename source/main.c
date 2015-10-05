@@ -45,8 +45,8 @@ static void ncch_get_counter(NCCH_Header* header, u8 counter[16], enum NCCH_Type
     switch (version) {
     case 0:
     case 2:
-        for(u32 i=0; i<8; i++)
-            counter[i] = partitionid[7-i];
+        for(u32 i = 0; i < 8; i++)
+            counter[i] = partitionid[7 - i];
         counter[8] = type;
         break;
     case 1:
@@ -62,10 +62,10 @@ static void ncch_get_counter(NCCH_Header* header, u8 counter[16], enum NCCH_Type
             break;
         }
 
-        for(u32 i=0; i<8; i++)
+        for(u32 i = 0; i < 8; i++)
             counter[i] = partitionid[i];
-        for(u32 i=0; i<4; i++)
-            counter[12+i] = x>>((3-i)*8);
+        for(u32 i = 0; i < 4; i++)
+            counter[12 + i] = x >> ((3 - i) * 8);
         break;
     }
 }
