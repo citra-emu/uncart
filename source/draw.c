@@ -14,9 +14,8 @@ int current_y = 0;
 
 void ClearScreen(unsigned char *screen, int color)
 {
-    int i;
     unsigned char *screenPos = screen;
-    for (i = 0; i < (SCREEN_HEIGHT * SCREEN_WIDTH); i++) {
+    for (int i = 0; i < (SCREEN_HEIGHT * SCREEN_WIDTH); i++) {
         *(screenPos++) = color >> 16;  // B
         *(screenPos++) = color >> 8;   // G
         *(screenPos++) = color & 0xFF; // R
@@ -25,14 +24,13 @@ void ClearScreen(unsigned char *screen, int color)
 
 void DrawCharacter(unsigned char *screen, int character, int x, int y, int color, int bgcolor)
 {
-    int yy, xx;
-    for (yy = 0; yy < 8; yy++) {
+    for (int yy = 0; yy < 8; yy++) {
         int xDisplacement = (x * BYTES_PER_PIXEL * SCREEN_WIDTH);
         int yDisplacement = ((SCREEN_WIDTH - (y + yy) - 1) * BYTES_PER_PIXEL);
         unsigned char *screenPos = screen + xDisplacement + yDisplacement;
 
         unsigned char charPos = font[character * 8 + yy];
-        for (xx = 7; xx >= 0; xx--) {
+        for (int xx = 7; xx >= 0; xx--) {
             if ((charPos >> xx) & 1) {
                 *(screenPos + 0) = color >> 16;  // B
                 *(screenPos + 1) = color >> 8;   // G

@@ -92,13 +92,12 @@ void add_ctr(void* ctr, u32 carry)
     u32 counter[4];
     u8 *outctr = (u8 *) ctr;
     u32 sum;
-    int32_t i;
 
-    for(i=0; i<4; i++) {
+    for(int32_t i=0; i<4; i++) {
         counter[i] = (outctr[i*4+0]<<24) | (outctr[i*4+1]<<16) | (outctr[i*4+2]<<8) | (outctr[i*4+3]<<0);
     }
 
-    for(i=3; i>=0; i--)
+    for(int32_t i=3; i>=0; i--)
     {
         sum = counter[i] + carry;
         if (sum < counter[i]) {
@@ -110,7 +109,7 @@ void add_ctr(void* ctr, u32 carry)
         counter[i] = sum;
     }
 
-    for(i=0; i<4; i++)
+    for(int32_t i=0; i<4; i++)
     {
         outctr[i*4+0] = counter[i]>>24;
         outctr[i*4+1] = counter[i]>>16;
@@ -161,15 +160,14 @@ void aes_fifos(void* inbuf, void* outbuf, size_t blocks)
     {
         while (aescnt_checkwrite());
 
-        int ii = 0;
-        for (ii = in; ii != in + AES_BLOCK_SIZE; ii += 4)
+        for (int ii = in; ii != in + AES_BLOCK_SIZE; ii += 4)
         {
             set_aeswrfifo( *(u32*)(ii) );
         }
         if (out)
         {
             while (aescnt_checkread()) ;
-            for (ii = out; ii != out + AES_BLOCK_SIZE; ii += 4)
+            for (int ii = out; ii != out + AES_BLOCK_SIZE; ii += 4)
             {
                 *(u32*)ii = read_aesrdfifo();
             }

@@ -32,14 +32,13 @@ static void ncch_get_counter(NCCH_Header* header, u8 counter[16], u8 type) {
     u32 version = header->version;
     u32 mediaunitsize = 0x200; // TODO
     u8* partitionid = header->partition_id;
-    u32 i;
     u32 x = 0;
 
     memset(counter, 0, 16);
 
     if (version == 2 || version == 0)
     {
-        for(i=0; i<8; i++)
+        for(u32 i=0; i<8; i++)
             counter[i] = partitionid[7-i];
         counter[8] = type;
     }
@@ -52,9 +51,9 @@ static void ncch_get_counter(NCCH_Header* header, u8 counter[16], u8 type) {
         else if (type == 3/*NCCHTYPE_ROMFS*/)
             x = header->romfs_offset * mediaunitsize;
 
-        for(i=0; i<8; i++)
+        for(u32 i=0; i<8; i++)
             counter[i] = partitionid[i];
-        for(i=0; i<4; i++)
+        for(u32 i=0; i<4; i++)
             counter[12+i] = x>>((3-i)*8);
     }
 }
