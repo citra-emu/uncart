@@ -96,7 +96,7 @@ struct Context {
 
 };
 
-static void find_encrypted_ncch_regions(NCCH_Header* ncch, NCSD_Header* ncsd, unsigned partition, struct Context* ctx, u32 initial_sector, u32 dumped) {
+static int find_encrypted_ncch_regions(NCCH_Header* ncch, NCSD_Header* ncsd, unsigned partition, struct Context* ctx, u32 initial_sector, u32 dumped) {
     u8* source = ctx->buffer;
     u8* dest = (u8*)ncch;
     u32 size = sizeof(NCCH_Header);
@@ -126,8 +126,7 @@ static void find_encrypted_ncch_regions(NCCH_Header* ncch, NCSD_Header* ncsd, un
             Debug("an external tool.");
             Debug("Dumping process aborted.");
             wait_key();
-            // TODO: Come up with a cleaner method of exiting here.
-            exit(1);
+            return -1;
         }
 
         // TODO: Consider checking for other flags, in particular the 9.6.0 keyY generator
@@ -158,6 +157,7 @@ static void find_encrypted_ncch_regions(NCCH_Header* ncch, NCSD_Header* ncsd, un
             ctx->num_areas++;
         }
     }
+    return 0;
 }
 
 static void decrypt_region(EncryptedArea area, struct Context* ctx, u32 initial_sector, u32 dumped) {
@@ -219,7 +219,8 @@ int dump_cart_region(u32 start_sector, u32 end_sector, FIL* output_file, struct 
 
                 if (initial_sector + dumped > ncsd->partition_table[partition].offset &&
                     initial_sector < ncsd->partition_table[partition].offset + (sizeof(NCCH_Header) / ctx->media_unit)) {
-                    find_encrypted_ncch_regions(&ctx->ncchs[partition], ncsd, partition, ctx, initial_sector, dumped);
+                    if (find_encrypted_ncch_regions(&ctx->ncchs[partition], ncsd, partition, ctx, initial_sector, dumped) < 0)
+                        return -1;
                 }
             }
 
