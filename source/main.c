@@ -241,7 +241,7 @@ int dump_cart_region(u32 start_sector, u32 end_sector, FIL* output_file, struct 
     return 0;
 }
 
-int main() {
+int main(void) {
 
 restart_program:
     // Setup boring stuff - clear the screen, initialize SD output, etc...

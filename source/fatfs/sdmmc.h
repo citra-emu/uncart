@@ -118,14 +118,14 @@ typedef struct mmcdevice {
     u32 res;
 } mmcdevice;
 
-/*int sdmmc_sdcard_init();
+/*int sdmmc_sdcard_init(void);
 void sdmmc_sdcard_readsector(uint32_t sector_no, void *out);
 void sdmmc_sdcard_readsectors(uint32_t sector_no, uint32_t numsectors, void *out);
 void sdmmc_sdcard_writesector(uint32_t sector_no, void *in);
 void sdmmc_sdcard_writesectors(uint32_t sector_no, uint32_t numsectors, void *in);
-void sdmmc_blktransferinit();*/
+void sdmmc_blktransferinit(void);*/
 
-void sdmmc_sdcard_init();
+void sdmmc_sdcard_init(void);
 int sdmmc_sdcard_readsector(u32 sector_no, u8 *out);
 int sdmmc_sdcard_readsectors(u32 sector_no, u32 numsectors, u8 *out);
 int sdmmc_sdcard_writesector(u32 sector_no, u8 *in);
@@ -136,9 +136,9 @@ int sdmmc_nand_writesectors(u32 sector_no, u32 numsectors, u8 *in);
 
 mmcdevice *getMMCDevice(int drive);
 
-void InitSDMMC();
-int Nand_Init();
-int SD_Init();
+void InitSDMMC(void);
+int Nand_Init(void);
+int SD_Init(void);
 
 static inline u16 sdmmc_read16(u16 reg) {
     return *(vu16*)(SDMMC_BASE + reg);

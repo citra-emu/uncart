@@ -255,7 +255,7 @@ u32 calcSDSize(u8* csd, int type)
     return result;
 }
 
-void InitSD()
+void InitSD(void)
 {
     //NAND
     handleNAND.isSDHC = 0;
@@ -335,7 +335,7 @@ void InitSD()
     inittarget(&handleSD);
 }
 
-int Nand_Init()
+int Nand_Init(void)
 {
     inittarget(&handleNAND);
     ioDelay(0xF000);
@@ -385,7 +385,7 @@ int Nand_Init()
     return 0;
 }
 
-int SD_Init()
+int SD_Init(void)
 {
     inittarget(&handleSD);
     //ioDelay(0x3E8);
@@ -453,7 +453,7 @@ int SD_Init()
     return 0;
 }
 
-void sdmmc_sdcard_init()
+void sdmmc_sdcard_init(void)
 {
     InitSD();
     u32 nand_res = Nand_Init();
