@@ -28,3 +28,5 @@ void DrawStringF(int x, int y, const char *format, ...);
 void DrawHexWithName(unsigned char *screen, const char *str, unsigned int hex, int x, int y, int color, int bgcolor);
 
 void Debug(const char *format, ...);
+void ClearTop(void);
+void WaitKey(void);

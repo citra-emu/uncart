@@ -9,6 +9,7 @@
 
 #include "font.h"
 #include "draw.h"
+#include "hid.h"
 
 int current_y = 0;
 
@@ -86,4 +87,15 @@ void Debug(const char *format, ...)
     if (current_y >= 240) {
         current_y = 0;
     }
+}
+
+void ClearTop(void) {
+    ClearScreen(TOP_SCREEN0, RGB(255, 255, 255));
+    ClearScreen(TOP_SCREEN1, RGB(255, 255, 255));
+    current_y = 0;
+}
+
+void WaitKey(void) {
+    Debug("Press key to continue...");
+    InputWait();
 }
