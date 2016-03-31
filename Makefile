@@ -7,6 +7,7 @@ $(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>dev
 endif
 
 include $(DEVKITARM)/3ds_rules
+include $(DEVKITARM)/ds_rules
 
 #---------------------------------------------------------------------------------
 # TARGET is the name of the output
@@ -16,32 +17,45 @@ include $(DEVKITARM)/3ds_rules
 # INCLUDES is a list of directories containing header files
 # SPECS is the directory containing the important build and link files
 #---------------------------------------------------------------------------------
-export TARGET		:=	$(shell basename $(CURDIR))
+export TARGET		:=	Uncart
 BUILD		:=	build
 SOURCES		:=	source source/fatfs source/gamecart
 DATA		:=	data
-INCLUDES	:=	source
+INCLUDES	:=	include source source/fatfs
 
 #---------------------------------------------------------------------------------
-# Setup some defines
+# THEME: if set to anything, name of the themes file folder inside resources
 #---------------------------------------------------------------------------------
+THEME	:=	
 
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-ARCH	:=	-march=armv5te -mtune=arm946e-s -mthumb -mthumb-interwork
+ARCH	:=	-mthumb -mthumb-interwork
 
 CFLAGS	:=	-g -Wall -O2\
-			-fomit-frame-pointer\
+			-march=armv5te -mtune=arm946e-s -fomit-frame-pointer\
 			-ffast-math -std=c99\
 			$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -DARM9 -Werror-implicit-function-declaration
+CFLAGS	+=	$(INCLUDE) -DEXEC_$(EXEC_METHOD) -DARM9 -D_GNU_SOURCE
+
+CFLAGS	+=	-DBUILD_NAME="\"$(TARGET) (`date +'%Y/%m/%d'`)\""
+
+ifneq ($(strip $(THEME)),)
+CFLAGS	+=	-DUSE_THEME=\"\/$(THEME)\"
+endif
 
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions
 
-ASFLAGS	:=	-g $(ARCH)
-LDFLAGS	=	-nostartfiles -g --specs=../stub.specs $(ARCH) -Wl,-Map,$(TARGET).map
+ASFLAGS	:=	-g $(ARCH) -DEXEC_$(EXEC_METHOD)
+LDFLAGS	=	-nostartfiles -g $(ARCH) -Wl,-Map,$(TARGET).map
+
+ifeq ($(EXEC_METHOD),GATEWAY)
+	LDFLAGS += --specs=../gateway.specs
+else ifeq ($(EXEC_METHOD),BOOTSTRAP)
+	LDFLAGS += --specs=../bootstrap.specs
+endif
 
 LIBS	:=
 
@@ -58,7 +72,9 @@ LIBDIRS	:=
 ifneq ($(BUILD),$(notdir $(CURDIR)))
 #---------------------------------------------------------------------------------
 
-export OUTPUT	:=	$(CURDIR)/$(TARGET)
+export OUTPUT_D	:=	$(CURDIR)/output
+export OUTPUT	:=	$(OUTPUT_D)/$(TARGET)
+export RELEASE	:=	$(CURDIR)/release
 
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
 			$(foreach dir,$(DATA),$(CURDIR)/$(dir))
@@ -93,20 +109,69 @@ export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
 
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
-.PHONY: $(BUILD) clean all
+.PHONY: common clean all gateway bootstrap cakehax cakerop brahma release
 
 #---------------------------------------------------------------------------------
-all: $(BUILD)
+all: brahma
 
-$(BUILD):
-	@[ -d $@ ] || mkdir -p $@
-	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
-	cp $(OUTPUT).bin arm9payload.bin
+common:
+	@[ -d $(OUTPUT_D) ] || mkdir -p $(OUTPUT_D)
+	@[ -d $(BUILD) ] || mkdir -p $(BUILD)
+    
+submodules:
+	@-git submodule update --init --recursive
 
+gateway: common
+	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile EXEC_METHOD=GATEWAY
+	@cp resources/LauncherTemplate.dat $(OUTPUT_D)/Launcher.dat
+	@dd if=$(OUTPUT).bin of=$(OUTPUT_D)/Launcher.dat bs=1497296 seek=1 conv=notrunc
+
+bootstrap: common
+	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile EXEC_METHOD=BOOTSTRAP
+
+cakehax: submodules common
+	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile EXEC_METHOD=GATEWAY
+	@make dir_out=$(OUTPUT_D) name=$(TARGET).dat -C CakeHax bigpayload
+	@dd if=$(OUTPUT).bin of=$(OUTPUT).dat bs=512 seek=160
+    
+cakerop: cakehax
+	@make DATNAME=$(TARGET).dat DISPNAME=$(TARGET) GRAPHICS=../resources/CakesROP -C CakesROP
+	@mv CakesROP/CakesROP.nds $(OUTPUT_D)/$(TARGET).nds
+
+brahma: submodules bootstrap
+	@[ -d BrahmaLoader/data ] || mkdir -p BrahmaLoader/data
+	@cp $(OUTPUT).bin BrahmaLoader/data/payload.bin
+	@cp resources/BrahmaAppInfo BrahmaLoader/resources/AppInfo
+	@cp resources/BrahmaIcon.png BrahmaLoader/resources/icon.png
+	@make --no-print-directory -C BrahmaLoader APP_TITLE=$(TARGET)
+	
+release:
+	@rm -fr $(BUILD) $(OUTPUT_D) $(RELEASE)
+	@make --no-print-directory gateway
+	@-make --no-print-directory cakerop
+	@rm -fr $(BUILD) $(OUTPUT).bin $(OUTPUT).elf $(CURDIR)/$(LOADER)/data
+	@-make --no-print-directory brahma
+	@[ -d $(RELEASE) ] || mkdir -p $(RELEASE)
+	@[ -d $(RELEASE)/$(TARGET) ] || mkdir -p $(RELEASE)/$(TARGET)
+	@[ -d $(RELEASE)/scripts ] || mkdir -p $(RELEASE)/scripts
+	@cp $(OUTPUT_D)/Launcher.dat $(RELEASE)
+	@-cp $(OUTPUT).bin $(RELEASE)
+	@-cp $(OUTPUT).dat $(RELEASE)
+	@-cp $(OUTPUT).nds $(RELEASE)
+	@-cp $(OUTPUT).3dsx $(RELEASE)/$(TARGET)
+	@-cp $(OUTPUT).smdh $(RELEASE)/$(TARGET)
+	@cp $(CURDIR)/scripts/*.py $(RELEASE)/scripts
+	@cp $(CURDIR)/README.md $(RELEASE)
+	@-[ ! -n "$(strip $(THEME))" ] || (mkdir $(RELEASE)/$(THEME) && cp $(CURDIR)/resources/$(THEME)/*.bin $(RELEASE)/$(THEME))
+	@-7z a $(RELEASE)/$(TARGET)-`date +'%Y%m%d-%H%M%S'`.zip $(RELEASE)/*
+	
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) $(OUTPUT).elf $(OUTPUT).bin arm9payload.bin
+	@-make clean --no-print-directory -C CakeHax
+	@-make clean --no-print-directory -C CakesROP
+	@-make clean --no-print-directory -C BrahmaLoader
+	@rm -fr $(BUILD) $(OUTPUT_D) $(RELEASE)
 
 
 #---------------------------------------------------------------------------------
@@ -123,7 +188,7 @@ $(OUTPUT).elf	:	$(OFILES)
 
 #---------------------------------------------------------------------------------
 %.bin: %.elf
-	@$(OBJCOPY) -O binary $< $@
+	@$(OBJCOPY) --set-section-flags .bss=alloc,load,contents -O binary $< $@
 	@echo built ... $(notdir $@)
 
 
