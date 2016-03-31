@@ -1,4 +1,5 @@
 build/
+BrahmaLoader/
 *.o
 *.elf
 *.bin
