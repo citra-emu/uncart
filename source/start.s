@@ -90,6 +90,7 @@ _init:
     push {r0-r12, lr}
 
     bl _enable_caches
+    
     bl main
 
     mrc p15, 0, r4, c1, c0, 0

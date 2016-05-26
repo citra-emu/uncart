@@ -7,5 +7,5 @@
 #include "common.h"
 
 void NTR_CmdReset(void);
-int NTR_CmdGetCartId(void);
+u32 NTR_CmdGetCartId(void);
 void NTR_CmdEnter16ByteMode(void);

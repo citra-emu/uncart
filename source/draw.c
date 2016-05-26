@@ -10,7 +10,7 @@
 #include "font.h"
 #include "draw.h"
 
-int current_y = 0;
+size_t current_y = 0;
 
 void ClearScreen(unsigned char *screen, int color)
 {
@@ -23,16 +23,15 @@ void ClearScreen(unsigned char *screen, int color)
     }
 }
 
-void DrawCharacter(unsigned char *screen, int character, int x, int y, int color, int bgcolor)
+void DrawCharacter(unsigned char *screen, int character, size_t x, size_t y, int color, int bgcolor)
 {
-    int yy, xx;
-    for (yy = 0; yy < 8; yy++) {
-        int xDisplacement = (x * BYTES_PER_PIXEL * SCREEN_WIDTH);
-        int yDisplacement = ((SCREEN_WIDTH - (y + yy) - 1) * BYTES_PER_PIXEL);
-        unsigned char *screenPos = screen + xDisplacement + yDisplacement;
-
-        unsigned char charPos = font[character * 8 + yy];
-        for (xx = 7; xx >= 0; xx--) {
+    for (size_t yy = 0; yy < 8; yy++) {
+        size_t xDisplacement = (x * BYTES_PER_PIXEL * SCREEN_WIDTH);
+        size_t yDisplacement = ((SCREEN_WIDTH - (y + yy) - 1) * BYTES_PER_PIXEL);
+        
+	unsigned char *screenPos = screen + xDisplacement + yDisplacement;
+        unsigned char charPos = font[(size_t)character * 8 + yy];
+        for (int xx = 7; xx >= 0; xx--) {
             if ((charPos >> xx) & 1) {
                 *(screenPos + 0) = color >> 16;  // B
                 *(screenPos + 1) = color >> 8;   // G
@@ -47,7 +46,7 @@ void DrawCharacter(unsigned char *screen, int character, int x, int y, int color
     }
 }
 
-void DrawString(unsigned char *screen, const char *str, int x, int y, int color, int bgcolor)
+void DrawString(unsigned char *screen, const char *str, size_t x, size_t y, int color, int bgcolor)
 {
     const size_t string_len = strlen(str);
 
@@ -55,7 +54,7 @@ void DrawString(unsigned char *screen, const char *str, int x, int y, int color,
         DrawCharacter(screen, str[i], x + i * 8, y, color, bgcolor);
 }
 
-void DrawStringF(int x, int y, const char *format, ...)
+void DrawStringF(size_t x, size_t y, const char *format, ...)
 {
     char str[256];
     va_list va;
@@ -70,8 +69,8 @@ void DrawStringF(int x, int y, const char *format, ...)
 
 void Debug(const char *format, ...)
 {
-    char str[50];
-    const char* spaces = "                                                X";
+    char str[51];
+    const char* spaces = "                                                 X";
     va_list va;
 
     va_start(va, format);
@@ -79,10 +78,10 @@ void Debug(const char *format, ...)
     va_end(va);
     snprintf(str, sizeof(str), "%s%s", str, spaces);
 
-    DrawString(TOP_SCREEN0, str, 10, current_y, RGB(255, 0, 0), RGB(255, 255, 255));
-    DrawString(TOP_SCREEN0, spaces, 10, current_y + 10, RGB(255, 0, 0), RGB(255, 255, 255));
-    DrawString(TOP_SCREEN1, str, 10, current_y, RGB(255, 0, 0), RGB(255, 255, 255));
-    DrawString(TOP_SCREEN1, spaces, 10, current_y + 10, RGB(255, 0, 0), RGB(255, 255, 255));
+    DrawString(TOP_SCREEN0, str, 0u, current_y, RGB(255, 0, 0), RGB(255, 255, 255));
+    DrawString(TOP_SCREEN0, spaces, 0u, current_y + 10, RGB(255, 0, 0), RGB(255, 255, 255));
+    DrawString(TOP_SCREEN1, str, 0u, current_y, RGB(255, 0, 0), RGB(255, 255, 255));
+    DrawString(TOP_SCREEN1, spaces, 0u, current_y + 10, RGB(255, 0, 0), RGB(255, 255, 255));
 
     current_y += 10;
     if (current_y >= 240) {

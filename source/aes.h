@@ -26,29 +26,29 @@
 
 #define AES_WRITE_FIFO_COUNT    ((REG_AESCNT>>0) & 0x1F)
 #define AES_READ_FIFO_COUNT     ((REG_AESCNT>>5) & 0x1F)
-#define AES_BUSY                (1<<31)
+#define AES_BUSY                (1u<<31)
 
-#define AES_FLUSH_READ_FIFO     (1<<10)
-#define AES_FLUSH_WRITE_FIFO    (1<<11)
-#define AES_BIT12               (1<<12)
-#define AES_BIT13               (1<<13)
-#define AES_MAC_SIZE(n)         ((n&7)<<16)
-#define AES_MAC_REGISTER_SOURCE (1<<20)
-#define AES_UNKNOWN_21          (1<<21)
-#define AES_OUTPUT_BIG_ENDIAN   (1<<22)
-#define AES_INPUT_BIG_ENDIAN    (1<<23)
-#define AES_OUTPUT_NORMAL_ORDER (1<<24)
-#define AES_INPUT_NORMAL_ORDER  (1<<25)
-#define AES_UNKNOWN_26          (1<<26)
-#define AES_MODE(n)             ((n&7)<<27)
-#define AES_INTERRUPT_ENABLE    (1<<30)
-#define AES_ENABLE              (1<<31)
+#define AES_FLUSH_READ_FIFO     (1u<<10)
+#define AES_FLUSH_WRITE_FIFO    (1u<<11)
+#define AES_BIT12               (1u<<12)
+#define AES_BIT13               (1u<<13)
+#define AES_MAC_SIZE(n)         ((n&7u)<<16)
+#define AES_MAC_REGISTER_SOURCE (1u<<20)
+#define AES_UNKNOWN_21          (1u<<21)
+#define AES_OUTPUT_BIG_ENDIAN   (1u<<22)
+#define AES_INPUT_BIG_ENDIAN    (1u<<23)
+#define AES_OUTPUT_NORMAL_ORDER (1u<<24)
+#define AES_INPUT_NORMAL_ORDER  (1u<<25)
+#define AES_UNKNOWN_26          (1u<<26)
+#define AES_MODE(n)             ((n&7u)<<27)
+#define AES_INTERRUPT_ENABLE    (1u<<30)
+#define AES_ENABLE              (1u<<31)
 
-#define AES_MODE_CCM_DECRYPT    0
-#define AES_MODE_CCM_ENCRYPT    1
-#define AES_MODE_CTR            2
-#define AES_MODE_UNK3           3
-#define AES_MODE_CBC_DECRYPT    4
-#define AES_MODE_CBC_ENCRYPT    5
-#define AES_MODE_UNK6           6
-#define AES_MODE_UNK7           7
+#define AES_MODE_CCM_DECRYPT    0u
+#define AES_MODE_CCM_ENCRYPT    1u
+#define AES_MODE_CTR            2u
+#define AES_MODE_UNK3           3u
+#define AES_MODE_CBC_DECRYPT    4u
+#define AES_MODE_CBC_ENCRYPT    5u
+#define AES_MODE_UNK6           6u
+#define AES_MODE_UNK7           7u

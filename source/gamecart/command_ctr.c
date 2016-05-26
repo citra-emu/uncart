@@ -9,7 +9,7 @@
 
 static int read_count = 0;
 
-void CTR_CmdC5()
+static inline void CTR_CmdC5()
 {
     static const u32 c5_cmd[4] = { 0xC5000000, 0x00000000, 0x00000000, 0x00000000 };
     CTR_SendCommand(c5_cmd, 0, 1, 0x100002C, NULL);
